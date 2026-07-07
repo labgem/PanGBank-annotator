@@ -1,0 +1,19 @@
+name: diamond_reassign
+description: Apply DIAMOND reassign as the final clustering correction step.
+keywords:
+  - diamond
+  - reassign
+input:
+  - clusters:
+      type: file
+      description: Reclustered centroid/member cluster table.
+  - db:
+      type: file
+      description: DIAMOND database.
+output:
+  - clusters:
+      type: file
+      description: Corrected centroid/member table.
+      pattern: corrected_*.tsv
+authors:
+  - yhoblos

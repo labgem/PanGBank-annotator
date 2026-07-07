@@ -1,0 +1,21 @@
+name: fetch_pangbank_collection
+description: Resolve a PanGBank collection release and collect pangenome family representative FASTA records.
+keywords:
+  - pangbank
+  - pangenome
+  - fasta
+tools:
+  - pangbank:
+      description: PanGBank CLI fallback for downloading pangenomes.
+input: []
+output:
+  - all_faa:
+      type: file
+      description: Concatenated pangenome family representative protein FASTA.
+      pattern: all_protein_families.faa.gz
+  - pangenome_families:
+      type: file
+      description: FASTA-derived Pangenome_id to Pangenome_family_id map.
+      pattern: pangenome_families.tsv
+authors:
+  - yhoblos

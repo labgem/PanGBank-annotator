@@ -1,0 +1,16 @@
+name: diamond_deepclust
+description: Cluster pangenome family representatives with DIAMOND deepclust.
+keywords:
+  - diamond
+  - deepclust
+input:
+  - db:
+      type: file
+      description: DIAMOND database.
+output:
+  - clusters:
+      type: file
+      description: DIAMOND centroid/member cluster table.
+      pattern: deepclust_*.tsv
+authors:
+  - yhoblos

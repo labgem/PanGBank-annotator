@@ -1,0 +1,29 @@
+process DIAMOND_REASSIGN {
+    tag "${level}"
+    label "process_deepclust"
+    publishDir "${params.outdir}/diamond/clusters", mode: "copy"
+
+    input:
+    tuple val(level), path(clusters), path(db)
+
+    output:
+    tuple val(level), path("corrected_${level}.tsv"), emit: clusters
+
+    script:
+    def approx_id = level == "deep" ? params.deep_approx_id : level
+    """
+    /env/products/diamond/2.1.13/bin/diamond reassign \\
+      -d ${db} \\
+      --clusters ${clusters} \\
+      -o corrected_${level}.tsv \\
+      --member-cover ${params.member_cover} \\
+      -e ${params.evalue} \\
+      --masking 0 \\
+      --soft-masking 0 \\
+      --comp-based-stats 0 \\
+      --approx-id ${approx_id} \\
+      --threads ${task.cpus} \\
+      -M ${params.diamond_memory} \\
+      --header
+    """
+}

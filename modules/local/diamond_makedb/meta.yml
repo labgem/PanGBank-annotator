@@ -1,0 +1,16 @@
+name: diamond_makedb
+description: Build a DIAMOND protein database from the concatenated representative FASTA.
+keywords:
+  - diamond
+  - makedb
+input:
+  - all_faa_gz:
+      type: file
+      description: Concatenated protein FASTA.
+output:
+  - db:
+      type: file
+      description: DIAMOND database.
+      pattern: "*.dmnd"
+authors:
+  - yhoblos

@@ -1,0 +1,22 @@
+name: package_panfam
+description: Assign PANFAM IDs and export parquet, representative FASTA, and MultiQC-ready report files.
+keywords:
+  - panfam
+  - parquet
+  - fasta
+input:
+  - all_faa_gz:
+      type: file
+      description: Concatenated pangenome family representative FASTA.
+  - pangenome_families:
+      type: file
+      description: Pangenome_id to Pangenome_family_id mapping.
+  - cluster_tables:
+      type: file
+      description: Raw and corrected cluster tables.
+output:
+  - panfam:
+      type: directory
+      description: PANFAM deliverable directory.
+authors:
+  - yhoblos

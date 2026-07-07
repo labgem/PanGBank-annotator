@@ -1,0 +1,19 @@
+name: diamond_recluster
+description: Apply DIAMOND recluster as the first clustering correction step.
+keywords:
+  - diamond
+  - recluster
+input:
+  - clusters:
+      type: file
+      description: Input centroid/member cluster table.
+  - db:
+      type: file
+      description: DIAMOND database.
+output:
+  - clusters:
+      type: file
+      description: Reclustered centroid/member table.
+      pattern: reclustered_*.tsv
+authors:
+  - yhoblos
