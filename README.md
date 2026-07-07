@@ -1,4 +1,4 @@
-# LABGeM/panannotator
+# LABGeM/panAnnotator
 
 [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_In_GitHub_Codespaces-black?labelColor=grey&logo=github)](https://github.com/codespaces/new/LABGeM/panannotator)
 [![GitHub Actions CI Status](https://github.com/LABGeM/panannotator/actions/workflows/nf-test.yml/badge.svg)](https://github.com/LABGeM/panannotator/actions/workflows/nf-test.yml)
@@ -14,47 +14,29 @@
 
 ## Introduction
 
-**LABGeM/panannotator** is a bioinformatics pipeline that ...
+**LABGeM/panAnnotator** is a workflow for building PANFAM protein-family
+clusters from PanGBank pangenome family representatives and, in a later stage,
+annotating the resulting representative sequences.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+The current implementation contains the clustering stage:
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/community/brand/workflow-schematics#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+1. Resolve a PanGBank collection release and source (`all` or `refseq`).
+2. Fetch `all_protein_families.faa.gz` records and build a pangenome-family map.
+3. Run DIAMOND `deepclust`, followed by `recluster` and `reassign` correction.
+4. Package PANFAM parquet files, representative FASTA files, and a report file.
 
 ## Usage
 
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/get_started/run-your-first-pipeline) with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
-First, prepare a samplesheet with your input data that looks as follows:
-
-`samplesheet.csv`:
-
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-```
-
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
-
-Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
+Run the clustering stage with a PanGBank collection release:
 
 ```bash
-nextflow run LABGeM/panannotator \
+nextflow run panAnnotator \
    -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
+   --collection_release v1.0.0 \
+   --source all \
    --outdir <OUTDIR>
 ```
 
@@ -63,7 +45,7 @@ nextflow run LABGeM/panannotator \
 
 ## Credits
 
-LABGeM/panannotator was originally written by Yazid Hoblos.
+LABGeM/panAnnotator was originally written by Yazid Hoblos.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
@@ -76,7 +58,7 @@ If you would like to contribute to this pipeline, please see the [contributing g
 ## Citations
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use LABGeM/panannotator for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+<!-- If you use LABGeM/panAnnotator for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 <!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 
