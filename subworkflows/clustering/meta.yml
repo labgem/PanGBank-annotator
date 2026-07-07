@@ -1,0 +1,16 @@
+name: clustering
+description: Fetch PanGBank pangenome family representatives, cluster with DIAMOND, correct assignments, and package PANFAM outputs.
+keywords:
+  - pangbank
+  - panfam
+  - clustering
+  - diamond
+components:
+  - fetch_pangbank_collection
+  - diamond_makedb
+  - diamond_deepclust
+  - diamond_recluster
+  - diamond_reassign
+  - package_panfam
+authors:
+  - yhoblos

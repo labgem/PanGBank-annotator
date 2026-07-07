@@ -24,11 +24,6 @@ include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_pana
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// TODO nf-core: Remove this line if you don't need a FASTA file
-//   This is an example of how to use getGenomeAttribute() to fetch parameters
-//   from igenomes.config using `--genome`
-params.fasta = getGenomeAttribute('fasta')
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOWS FOR PIPELINE
@@ -40,23 +35,16 @@ params.fasta = getGenomeAttribute('fasta')
 //
 workflow LABGEM_PANANNOTATOR {
 
-    take:
-    samplesheet // channel: samplesheet read in from --input
-
     main:
 
     //
     // WORKFLOW: Run pipeline
     //
-    PANANNOTATOR (
-        samplesheet,
-        params.multiqc_config,
-        params.multiqc_logo,
-        params.multiqc_methods_description,
-        params.outdir,
-    )
+    PANANNOTATOR()
+
     emit:
     multiqc_report = PANANNOTATOR.out.multiqc_report // channel: /path/to/multiqc_report.html
+    panfam = PANANNOTATOR.out.panfam
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -76,7 +64,7 @@ workflow {
         params.monochrome_logs,
         args,
         params.outdir,
-        params.input,
+        params.collection_release,
         params.help,
         params.help_full,
         params.show_hidden
@@ -85,9 +73,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    LABGEM_PANANNOTATOR (
-        PIPELINE_INITIALISATION.out.samplesheet
-    )
+    LABGEM_PANANNOTATOR()
     //
     // SUBWORKFLOW: Run completion tasks
     //
