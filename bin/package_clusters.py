@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import os
 import statistics
 from collections import Counter
 from pathlib import Path
@@ -149,6 +150,84 @@ def report_lines(before: dict[str, pd.DataFrame], after: dict[str, pd.DataFrame]
     return lines
 
 
+def cluster_size_counts(df: pd.DataFrame) -> Counter:
+    return Counter(df.groupby("centroid").size().tolist())
+
+
+def plot_cluster_size_distribution(
+    before: dict[str, pd.DataFrame],
+    after: dict[str, pd.DataFrame],
+    out_path: Path,
+) -> None:
+    os.environ.setdefault("XDG_CACHE_HOME", str(out_path.parent / ".cache"))
+    os.environ.setdefault("MPLCONFIGDIR", str(out_path.parent / ".matplotlib"))
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    levels = list(after)
+    if not levels:
+        return
+
+    fig, axes = plt.subplots(
+        len(levels),
+        1,
+        figsize=(10, max(3.2, 3.1 * len(levels))),
+        sharex=True,
+        constrained_layout=True,
+    )
+    if len(levels) == 1:
+        axes = [axes]
+
+    colors = {"before_ec": "#8a8f98", "after_ec": "#2563eb"}
+    for ax, level in zip(axes, levels):
+        plotted = False
+        for section, tables, label, linestyle in (
+            ("before_ec", before, "Before error correction", "--"),
+            ("after_ec", after, "After error correction", "-"),
+        ):
+            counts = cluster_size_counts(tables[level])
+            if not counts:
+                continue
+            x = sorted(counts)
+            y = [counts[size] for size in x]
+            ax.plot(
+                x,
+                y,
+                marker="o",
+                markersize=4,
+                linewidth=2,
+                linestyle=linestyle,
+                color=colors[section],
+                label=label,
+            )
+            plotted = True
+
+        after_counts = cluster_size_counts(after[level])
+        singleton_count = after_counts.get(1, 0)
+        cluster_count = sum(after_counts.values())
+        ax.set_title(
+            f"Cluster level {level}: {cluster_count:,} clusters, {singleton_count:,} singletons after correction",
+            loc="left",
+            fontsize=11,
+            fontweight="bold",
+        )
+        ax.set_ylabel("Number of clusters")
+        ax.grid(True, which="both", axis="both", alpha=0.22)
+        ax.spines[["top", "right"]].set_visible(False)
+        if plotted:
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.legend(frameon=False, loc="upper right")
+
+    axes[-1].set_xlabel("Cluster size (members per cluster)")
+    fig.suptitle("PANFAM Cluster Size Distribution", fontsize=15, fontweight="bold")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=180)
+    plt.close(fig)
+
+
 def main() -> None:
     args = parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -171,6 +250,11 @@ def main() -> None:
     pangenome_families = read_pangenome_families(args.pangenome_families)
     write_parquets(packaged, pangenome_families, args.out_dir, args.compression)
     (args.out_dir / "PANFAM_report.txt").write_text("\n".join(report_lines(before, after)) + "\n")
+    plot_cluster_size_distribution(
+        before,
+        after,
+        args.out_dir / "plots" / "PANFAM_cluster_size_distribution.png",
+    )
 
 
 if __name__ == "__main__":
