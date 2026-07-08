@@ -1,7 +1,7 @@
 process PACKAGE_PANFAM {
     tag "PANFAM"
-    label "process_medium"
-    publishDir "${params.outdir}/PANFAM", mode: "copy"
+    label "process_high"
+    publishDir "${params.outdir}", mode: "copy"
 
     input:
     path all_faa_gz
@@ -12,8 +12,14 @@ process PACKAGE_PANFAM {
     path "PANFAM", emit: panfam
 
     script:
+    def levels_arg = params.levels instanceof List
+        ? params.levels.join(' ')
+        : params.levels.toString().split(',').collect { it.trim() }.findAll { it }.join(' ')
+
     """
     mkdir -p clusters
+    export XDG_CACHE_HOME="\$PWD/.cache"
+    export MPLCONFIGDIR="\$PWD/.matplotlib"
     cp ${cluster_tables} clusters/
     python ${projectDir}/bin/package_clusters.py \\
       --clusters-dir clusters \\
@@ -21,7 +27,7 @@ process PACKAGE_PANFAM {
       --pangenome-families ${pangenome_families} \\
       --collection-release-id ${params.collection_release} \\
       --out-dir PANFAM \\
-      --levels ${params.levels.join(' ')} \\
+      --levels ${levels_arg} \\
       --compression ${params.compression}
     """
 }
