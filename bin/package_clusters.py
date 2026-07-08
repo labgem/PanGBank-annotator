@@ -154,6 +154,18 @@ def cluster_size_counts(df: pd.DataFrame) -> Counter:
     return Counter(df.groupby("centroid").size().tolist())
 
 
+def rank_curve(counts: Counter) -> tuple[list[int], list[int]]:
+    ranks: list[int] = []
+    sizes: list[int] = []
+    rank = 1
+    for size in sorted(counts, reverse=True):
+        count = counts[size]
+        ranks.extend([rank, rank + count - 1])
+        sizes.extend([size, size])
+        rank += count
+    return ranks, sizes
+
+
 def plot_cluster_size_distribution(
     before: dict[str, pd.DataFrame],
     after: dict[str, pd.DataFrame],
@@ -180,26 +192,25 @@ def plot_cluster_size_distribution(
     if len(levels) == 1:
         axes = [axes]
 
-    colors = {"before_ec": "#8a8f98", "after_ec": "#2563eb"}
+    level_colors = {"deep": "#7c3aed", "50": "#0891b2", "80": "#ea580c"}
     for ax, level in zip(axes, levels):
         plotted = False
-        for section, tables, label, linestyle in (
-            ("before_ec", before, "Before error correction", "--"),
-            ("after_ec", after, "After error correction", "-"),
+        level_color = level_colors.get(level, "#2563eb")
+        for tables, label, linestyle, alpha, linewidth in (
+            (before, "Before error correction", "--", 0.45, 1.8),
+            (after, "After error correction", "-", 1.0, 2.2),
         ):
             counts = cluster_size_counts(tables[level])
             if not counts:
                 continue
-            x = sorted(counts)
-            y = [counts[size] for size in x]
+            x, y = rank_curve(counts)
             ax.plot(
                 x,
                 y,
-                marker="o",
-                markersize=4,
-                linewidth=2,
+                linewidth=linewidth,
                 linestyle=linestyle,
-                color=colors[section],
+                color=level_color,
+                alpha=alpha,
                 label=label,
             )
             plotted = True
@@ -213,16 +224,15 @@ def plot_cluster_size_distribution(
             fontsize=11,
             fontweight="bold",
         )
-        ax.set_ylabel("Number of clusters")
-        ax.grid(True, which="both", axis="both", alpha=0.22)
+        ax.set_ylabel("Cluster size")
         ax.spines[["top", "right"]].set_visible(False)
         if plotted:
             ax.set_xscale("log")
             ax.set_yscale("log")
             ax.legend(frameon=False, loc="upper right")
 
-    axes[-1].set_xlabel("Cluster size (members per cluster)")
-    fig.suptitle("PANFAM Cluster Size Distribution", fontsize=15, fontweight="bold")
+    axes[-1].set_xlabel("Cluster rank, largest to smallest")
+    fig.suptitle("PANFAM Cluster Size Rank Distribution", fontsize=15, fontweight="bold")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=180)
     plt.close(fig)
