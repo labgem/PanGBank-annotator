@@ -1,6 +1,7 @@
 # panAnnotator
 
 <!-- [![Open in GitHub Codespaces](https://img.shields.io/badge/Open_In_GitHub_Codespaces-black?labelColor=grey&logo=github)](https://github.com/codespaces/new/yazid-hoblos/panannotator) -->
+
 [![GitHub Actions CI Status](https://github.com/yazid-hoblos/panannotator/actions/workflows/nf-test.yml/badge.svg)](https://github.com/yazid-hoblos/panannotator/actions/workflows/nf-test.yml)
 [![GitHub Actions Linting Status](https://github.com/yazid-hoblos/panannotator/actions/workflows/linting.yml/badge.svg)](https://github.com/yazid-hoblos/panannotator/actions/workflows/linting.yml)
 [![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
@@ -14,9 +15,7 @@
 
 ## Introduction
 
-**panAnnotator** is a workflow for building PANFAM protein-family
-clusters from PanGBank pangenome family representatives and, in a later stage,
-annotating the resulting representative sequences.
+**panAnnotator** is a workflow for building PANFAM protein clusters from PanGBank pangenome family representatives and, in a later stage, annotating the resulting representative sequences.
 
 The current implementation contains the clustering stage:
 
@@ -42,7 +41,6 @@ nextflow run panAnnotator \
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
-
 
 ## Citations
 
