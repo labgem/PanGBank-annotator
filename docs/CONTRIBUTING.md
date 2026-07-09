@@ -3,12 +3,12 @@ title: Contributing
 markdownPlugin: checklist
 ---
 
-# `LABGeM/panannotator`: Contributing guidelines
+# `panannotator`: Contributing guidelines
 
 Hi there!
-Thanks for taking an interest in improving LABGeM/panannotator.
+Thanks for taking an interest in improving panannotator.
 
-This page describes the recommended nf-core way to contribute to both LABGeM/panannotator and nf-core pipelines in general, including:
+<!-- This page describes the recommended nf-core way to contribute to both LABGeM/panannotator and nf-core pipelines in general, including:
 
 - [General contribution guidelines](#general-contribution-guidelines): common procedures or guides across all nf-core pipelines.
 - [Pipeline-specific contribution guidelines](#pipeline-specific-contribution-guidelines): procedures or guides specific to the development conventions of LABGeM/panannotator.
@@ -160,6 +160,6 @@ nf-core pipelines bump-version --nextflow . <min_nf_version>
 
 If you update images or graphics, follow the nf-core [style guidelines](https://nf-co.re/docs/community/brand/workflow-schematics).
 
-## Pipeline specific contribution guidelines
+## Pipeline specific contribution guidelines -->
 
 <!-- TODO nf-core: Add any pipeline specific contribution guidelines here, such as coding styles, procedures, checklists etc. -->
