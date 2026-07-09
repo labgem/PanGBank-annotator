@@ -8,17 +8,15 @@ Usage: fetch_pangbank_collection.sh \
   --source all|refseq \
   --out-dir DIR \
   [--pangbank-root DIR] \
-  [--pangbank-cli pangbank]
+  [--pangbank-api-url URL]
 
-Resolve a PanGBank collection release, write pangenomes.txt, write
-pangenome_families.tsv from FASTA record IDs, and concatenate
-all_protein_families.faa.gz into all_protein_families.faa.gz.
+Resolve a PanGBank collection release through the PanGBank API, write
+collection_release_id.txt as r<api_release_id>, write pangenomes.txt, write
+pangenome_families.tsv from FASTA record IDs, and concatenate local
+all_protein_families.faa.gz files into all_protein_families.faa.gz.
 
-The preferred path is direct filesystem access to the PanGBank data mirror:
+Sequence data are read from the local PanGBank data mirror:
   <pangbank-root>/collections/GTDB_<source>/release_<release>/data/pangenomes
-
-If that path is absent and pangbank is installed, the script falls back to
-PanGBank-cli download mode.
 EOF
 }
 
@@ -26,7 +24,7 @@ collection_release=""
 source_name=""
 out_dir=""
 pangbank_root="${PANGBANK_ROOT:-/env/export/pangbank_data/prod}"
-pangbank_cli="${PANGBANK_CLI:-pangbank}"
+pangbank_api_url="${PANGBANK_API_URL:-https://pangbank-api.genoscope.cns.fr}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -46,8 +44,8 @@ while [[ $# -gt 0 ]]; do
             pangbank_root="$2"
             shift 2
             ;;
-        --pangbank-cli)
-            pangbank_cli="$2"
+        --pangbank-api-url)
+            pangbank_api_url="$2"
             shift 2
             ;;
         -h|--help)
@@ -77,6 +75,57 @@ case "$source_name" in
 esac
 
 mkdir -p "$out_dir"
+
+resolve_collection_release_id() {
+    local collection_name="$1"
+    local release_version="$2"
+    local api_url="$3"
+
+    API_URL="$api_url" COLLECTION_NAME="$collection_name" RELEASE_VERSION="$release_version" python3 <<'PY'
+import json
+import os
+import sys
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
+
+api_url = os.environ["API_URL"].rstrip("/")
+collection_name = os.environ["COLLECTION_NAME"]
+release_version = os.environ["RELEASE_VERSION"].removeprefix("v")
+query = urlencode({"collection_name": collection_name, "only_latest_release": "false"})
+url = f"{api_url}/collections/?{query}"
+
+try:
+    with urlopen(url, timeout=30) as response:
+        collections = json.load(response)
+except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
+    print(f"[error] failed to query PanGBank API: {url}: {error}", file=sys.stderr)
+    sys.exit(1)
+
+matches = [collection for collection in collections if collection.get("name") == collection_name]
+if not matches:
+    print(f"[error] collection not found in PanGBank API: {collection_name}", file=sys.stderr)
+    sys.exit(1)
+
+releases = matches[0].get("releases") or []
+for release in releases:
+    if str(release.get("version", "")).removeprefix("v") == release_version:
+        release_id = release.get("id")
+        if release_id is None:
+            print(f"[error] API release for {collection_name} {release_version} has no id", file=sys.stderr)
+            sys.exit(1)
+        print(f"r{release_id}")
+        sys.exit(0)
+
+available = ", ".join(str(release.get("version")) for release in releases) or "none"
+print(
+    f"[error] release {release_version} not found for {collection_name} in PanGBank API; "
+    f"available releases: {available}",
+    file=sys.stderr,
+)
+sys.exit(1)
+PY
+}
 
 export_from_pangenomes_root() {
     local root="$1"
@@ -116,6 +165,9 @@ export_from_pangenomes_root() {
     fi
 }
 
+collection_release_id="$(resolve_collection_release_id "$collection" "$collection_release" "$pangbank_api_url")"
+printf '%s\n' "$collection_release_id" > "$out_dir/collection_release_id.txt"
+
 release_candidates=("$collection_release")
 if [[ "$collection_release" != v* ]]; then
     release_candidates+=("v$collection_release")
@@ -138,24 +190,12 @@ fi
 
 if [[ -d "$pangenomes_root" ]]; then
     echo "[info] using local PanGBank mirror: $pangenomes_root" >&2
+    echo "[info] using PanGBank API collection release id: $collection_release_id" >&2
     export_from_pangenomes_root "$pangenomes_root"
     printf '%s\n' "$pangenomes_root" > "$out_dir/pangenomes_root.txt"
     exit 0
 fi
 
-if ! command -v "$pangbank_cli" >/dev/null 2>&1; then
-    echo "[error] local mirror not found and PanGBank-cli is unavailable: $pangbank_cli" >&2
-    printf '[error] tried path: %s\n' "${tried_roots[@]}" >&2
-    exit 1
-fi
-
-echo "[info] local mirror absent; using PanGBank-cli for $collection" >&2
-"$pangbank_cli" search-pangenomes \
-    --collection "$collection" \
-    --outdir "$out_dir/download" \
-    --download \
-    --no-progress \
-    --table-path "$out_dir/pangenomes.tsv"
-
-export_from_pangenomes_root "$out_dir/download"
-printf '%s\n' "$out_dir/download" > "$out_dir/pangenomes_root.txt"
+echo "[error] local PanGBank mirror not found for $collection release $collection_release" >&2
+printf '[error] tried path: %s\n' "${tried_roots[@]}" >&2
+exit 1

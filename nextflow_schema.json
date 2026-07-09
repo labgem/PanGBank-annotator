@@ -53,6 +53,12 @@
                     "default": "/env/export/pangbank_data/prod",
                     "description": "Root of the local PanGBank data mirror.",
                     "hidden": true
+                },
+                "pangbank_api_url": {
+                    "type": "string",
+                    "default": "https://pangbank-api.genoscope.cns.fr",
+                    "description": "PanGBank API base URL used to resolve the numeric collection release ID.",
+                    "hidden": true
                 }
             }
         },

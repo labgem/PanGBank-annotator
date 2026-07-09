@@ -28,11 +28,14 @@ stage without changing the top-level workflow shape.
 
 ## PanGBank Access
 
-The clustering stage first tries to read the local PanGBank mirror:
+The clustering stage uses the PanGBank API only to validate the selected
+collection release and resolve its numeric API release ID. That ID is written
+as `r<id>` and used in PANFAM cluster identifiers.
+
+Protein sequence data are read from the local PanGBank mirror:
 
 ```text
 <pangbank_root>/collections/GTDB_<source>/release_<collection_release>/data/pangenomes
 ```
 
-If that path is absent and `pangbank` is installed, the fetch helper falls back
-to PanGBank-cli download mode.
+Each pangenome directory must contain `all_protein_families.faa.gz`.

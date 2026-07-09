@@ -8,6 +8,7 @@ process FETCH_PANGBANK_COLLECTION {
     path "pangenome_families.tsv", emit: pangenome_families
     path "pangenomes.txt", emit: pangenomes
     path "pangenomes_root.txt", emit: pangenomes_root
+    path "collection_release_id.txt", emit: collection_release_id
 
     script:
     """
@@ -15,6 +16,7 @@ process FETCH_PANGBANK_COLLECTION {
       --collection-release ${params.collection_release} \\
       --source ${params.source} \\
       --out-dir . \\
-      --pangbank-root ${params.pangbank_root}
+      --pangbank-root ${params.pangbank_root} \\
+      --pangbank-api-url ${params.pangbank_api_url}
     """
 }

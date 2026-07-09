@@ -41,6 +41,7 @@ workflow CLUSTERING {
     PACKAGE_PANFAM(
         FETCH_PANGBANK_COLLECTION.out.all_faa,
         FETCH_PANGBANK_COLLECTION.out.pangenome_families,
+        FETCH_PANGBANK_COLLECTION.out.collection_release_id,
         package_tables_ch
     )
 

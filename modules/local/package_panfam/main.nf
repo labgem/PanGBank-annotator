@@ -6,6 +6,7 @@ process PACKAGE_PANFAM {
     input:
     path all_faa_gz
     path pangenome_families
+    path collection_release_id
     path cluster_tables
 
     output:
@@ -25,7 +26,7 @@ process PACKAGE_PANFAM {
       --clusters-dir clusters \\
       --all-faa-gz ${all_faa_gz} \\
       --pangenome-families ${pangenome_families} \\
-      --collection-release-id ${params.collection_release} \\
+      --collection-release-id "\$(cat ${collection_release_id})" \\
       --out-dir PANFAM \\
       --levels ${levels_arg} \\
       --compression ${params.compression}
