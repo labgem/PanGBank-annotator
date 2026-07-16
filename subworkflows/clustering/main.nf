@@ -50,4 +50,10 @@ workflow CLUSTERING {
     all_faa = FETCH_PANGBANK_COLLECTION.out.all_faa
     pangenome_families = FETCH_PANGBANK_COLLECTION.out.pangenome_families
     corrected_clusters = DIAMOND_REASSIGN.out.clusters
+    versions = FETCH_PANGBANK_COLLECTION.out.versions
+        .mix(DIAMOND_MAKEDB.out.versions)
+        .mix(DIAMOND_DEEPCLUST.out.versions)
+        .mix(DIAMOND_RECLUSTER.out.versions)
+        .mix(DIAMOND_REASSIGN.out.versions)
+        .mix(PACKAGE_PANFAM.out.versions)
 }

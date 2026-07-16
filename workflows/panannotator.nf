@@ -21,6 +21,7 @@ workflow PANANNOTATOR {
 
     if (params.run_clustering.toString() == 'true') {
         CLUSTERING()
+        ch_versions = ch_versions.mix(CLUSTERING.out.versions)
     } else {
         error "At least one stage must be enabled. Currently only --run_clustering true is implemented."
     }

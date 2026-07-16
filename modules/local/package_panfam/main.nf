@@ -11,6 +11,7 @@ process PACKAGE_PANFAM {
 
     output:
     path "PANFAM", emit: panfam
+    path "versions_package_panfam.yml", emit: versions
 
     script:
     def levels_arg = params.levels instanceof List
@@ -30,5 +31,19 @@ process PACKAGE_PANFAM {
       --out-dir PANFAM \\
       --levels ${levels_arg} \\
       --compression ${params.compression}
+
+    python - <<'PY' > versions_package_panfam.yml
+import platform
+import pandas
+
+print(f'"${task.process}":')
+print(f'    python: {platform.python_version()}')
+print(f'    pandas: {pandas.__version__}')
+try:
+    import matplotlib
+    print(f'    matplotlib: {matplotlib.__version__}')
+except Exception:
+    pass
+PY
     """
 }

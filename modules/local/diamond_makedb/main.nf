@@ -8,10 +8,16 @@ process DIAMOND_MAKEDB {
 
     output:
     path "panfam.dmnd", emit: db
+    path "versions_makedb.yml", emit: versions
 
     script:
     """
     gzip -dc ${all_faa_gz} > all_protein_families.faa
     diamond makedb --in all_protein_families.faa -d panfam
+
+    cat <<-END_VERSIONS > versions_makedb.yml
+    "${task.process}":
+        diamond: \$(diamond --version | sed 's/^diamond version //')
+    END_VERSIONS
     """
 }
