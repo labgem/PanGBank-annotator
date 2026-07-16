@@ -15,7 +15,7 @@
                 "input": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "description": "Unused nf-core compatibility placeholder. Use collection_release and source to select PanGBank input data.",
+                    "description": "Unused nf-core compatibility placeholder. Use collection_release and collection to select PanGBank input data.",
                     "hidden": true
                 },
                 "outdir": {
@@ -41,11 +41,11 @@
                     "description": "PanGBank collection release ID, for example v1.0.0.",
                     "fa_icon": "fas fa-database"
                 },
-                "source": {
+                "collection": {
                     "type": "string",
-                    "default": "all",
-                    "enum": ["all", "refseq"],
-                    "description": "PanGBank source collection to process.",
+                    "default": "GTDB_all",
+                    "enum": ["GTDB_all", "GTDB_refseq"],
+                    "description": "Full PanGBank collection name to process.",
                     "fa_icon": "fas fa-layer-group"
                 },
                 "pangbank_root": {
