@@ -5,8 +5,8 @@ keywords:
   - pangenome
   - fasta
 tools:
-  - pangbank:
-      description: PanGBank CLI fallback for downloading pangenomes.
+  - pangbank_api:
+      description: PanGBank API metadata lookup for collection release and pangenome IDs.
 input: []
 output:
   - all_faa:
@@ -15,7 +15,11 @@ output:
       pattern: all_protein_families.faa.gz
   - pangenome_families:
       type: file
-      description: FASTA-derived Pangenome_id to Pangenome_family_id map.
+      description: API-derived integer Pangenome_id to FASTA-derived Pangenome_family_id map.
       pattern: pangenome_families.tsv
+  - pangenome_api_ids:
+      type: file
+      description: Local pangenome directory name to PanGBank integer pangenome ID map.
+      pattern: pangenome_api_ids.tsv
 authors:
   - yhoblos

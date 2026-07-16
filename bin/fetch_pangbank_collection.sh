@@ -5,7 +5,7 @@ usage() {
     cat >&2 <<'EOF'
 Usage: fetch_pangbank_collection.sh \
   --collection-release RELEASE \
-  --source all|refseq \
+  --collection COLLECTION \
   --out-dir DIR \
   [--pangbank-root DIR] \
   [--pangbank-api-url URL]
@@ -16,12 +16,12 @@ pangenome_families.tsv from FASTA record IDs, and concatenate local
 all_protein_families.faa.gz files into all_protein_families.faa.gz.
 
 Sequence data are read from the local PanGBank data mirror:
-  <pangbank-root>/collections/GTDB_<source>/release_<release>/data/pangenomes
+  <pangbank-root>/collections/<collection>/release_<release>/data/pangenomes
 EOF
 }
 
 collection_release=""
-source_name=""
+collection=""
 out_dir=""
 pangbank_root="${PANGBANK_ROOT:-/env/export/pangbank_data/prod}"
 pangbank_api_url="${PANGBANK_API_URL:-https://pangbank-api.genoscope.cns.fr}"
@@ -32,8 +32,8 @@ while [[ $# -gt 0 ]]; do
             collection_release="$2"
             shift 2
             ;;
-        --source)
-            source_name="$2"
+        --collection)
+            collection="$2"
             shift 2
             ;;
         --out-dir)
@@ -60,16 +60,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z "$collection_release" || -z "$source_name" || -z "$out_dir" ]]; then
+if [[ -z "$collection_release" || -z "$collection" || -z "$out_dir" ]]; then
     usage
     exit 2
 fi
 
-case "$source_name" in
-    all) collection="GTDB_all" ;;
-    refseq) collection="GTDB_refseq" ;;
+case "$collection" in
+    GTDB_all|GTDB_refseq) ;;
     *)
-        echo "[error] --source must be one of: all, refseq" >&2
+        echo "[error] --collection must be a full PanGBank collection name, e.g. GTDB_all or GTDB_refseq" >&2
         exit 2
         ;;
 esac
@@ -127,20 +126,118 @@ sys.exit(1)
 PY
 }
 
+fetch_pangenome_api_ids() {
+    local collection_name="$1"
+    local release_id="$2"
+    local api_url="$3"
+    local out_tsv="$4"
+
+    API_URL="$api_url" COLLECTION_NAME="$collection_name" RELEASE_ID="${release_id#r}" OUT_TSV="$out_tsv" python3 <<'PY'
+import json
+import os
+import sys
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
+
+api_url = os.environ["API_URL"].rstrip("/")
+collection_name = os.environ["COLLECTION_NAME"]
+release_id = int(os.environ["RELEASE_ID"])
+out_tsv = os.environ["OUT_TSV"]
+
+limit = 100
+offset = 0
+name_to_id: dict[str, int] = {}
+
+while True:
+    query = urlencode(
+        {
+            "collection_name": collection_name,
+            "only_latest_release": "false",
+            "offset": offset,
+            "limit": limit,
+        }
+    )
+    url = f"{api_url}/pangenomes/?{query}"
+    try:
+        with urlopen(url, timeout=30) as response:
+            records = json.load(response)
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as error:
+        print(f"[error] failed to query PanGBank API: {url}: {error}", file=sys.stderr)
+        sys.exit(1)
+
+    if not records:
+        break
+
+    for record in records:
+        record_release_id = record.get("collection_release_id")
+        if record_release_id is None:
+            record_release_id = (record.get("collection_release") or {}).get("id")
+        if record_release_id != release_id:
+            continue
+
+        name = record.get("name")
+        pangenome_id = record.get("id")
+        if not name or pangenome_id is None:
+            print(f"[error] malformed pangenome API record: {record}", file=sys.stderr)
+            sys.exit(1)
+        if name in name_to_id and name_to_id[name] != pangenome_id:
+            print(f"[error] duplicate pangenome name with different ids in API: {name}", file=sys.stderr)
+            sys.exit(1)
+        name_to_id[name] = pangenome_id
+
+    offset += limit
+    if len(records) < limit:
+        break
+
+if not name_to_id:
+    print(
+        f"[error] no pangenomes found in PanGBank API for {collection_name} release id r{release_id}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+with open(out_tsv, "w", encoding="utf-8") as handle:
+    handle.write("Local_pangenome_name\tPangenome_id\n")
+    for name, pangenome_id in sorted(name_to_id.items()):
+        handle.write(f"{name}\t{pangenome_id}\n")
+PY
+}
+
 export_from_pangenomes_root() {
     local root="$1"
-    find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort > "$out_dir/pangenomes.txt"
-    if [[ ! -s "$out_dir/pangenomes.txt" ]]; then
+    local api_ids_tsv="$2"
+    local local_pangenomes="$out_dir/local_pangenomes.txt"
+
+    find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort > "$local_pangenomes"
+    if [[ ! -s "$local_pangenomes" ]]; then
         echo "[error] no pangenome directories found in $root" >&2
         exit 1
     fi
 
     printf 'Pangenome_id\tPangenome_family_id\n' > "$out_dir/pangenome_families.tsv"
+    : > "$out_dir/pangenomes.txt"
+
+    declare -A pangenome_ids=()
+    while IFS=$'\t' read -r local_name pangenome_id; do
+        if [[ "$local_name" == "Local_pangenome_name" ]]; then
+            continue
+        fi
+        pangenome_ids["$local_name"]="$pangenome_id"
+    done < "$api_ids_tsv"
+
     {
-        while IFS= read -r pangenome_id; do
-            fasta="$root/$pangenome_id/all_protein_families.faa.gz"
+        while IFS= read -r local_pangenome_name; do
+            pangenome_id="${pangenome_ids[$local_pangenome_name]:-}"
+            if [[ -z "$pangenome_id" ]]; then
+                echo "[error] pangenome is present in the local mirror but absent from the PanGBank API release: $local_pangenome_name" >&2
+                exit 1
+            fi
+
+            printf '%s\n' "$pangenome_id" >> "$out_dir/pangenomes.txt"
+            fasta="$root/$local_pangenome_name/all_protein_families.faa.gz"
             if [[ ! -s "$fasta" ]]; then
-                echo "[error] missing FASTA for pangenome $pangenome_id: $fasta" >&2
+                echo "[error] missing FASTA for pangenome $local_pangenome_name: $fasta" >&2
                 exit 1
             fi
 
@@ -152,7 +249,7 @@ export_from_pangenomes_root() {
                 }
                 { print }
             ' families="$out_dir/pangenome_families.tsv"
-        done < "$out_dir/pangenomes.txt"
+        done < "$local_pangenomes"
     } | gzip -c > "$out_dir/all_protein_families.faa.gz"
 
     if [[ ! -s "$out_dir/all_protein_families.faa.gz" ]]; then
@@ -167,6 +264,7 @@ export_from_pangenomes_root() {
 
 collection_release_id="$(resolve_collection_release_id "$collection" "$collection_release" "$pangbank_api_url")"
 printf '%s\n' "$collection_release_id" > "$out_dir/collection_release_id.txt"
+fetch_pangenome_api_ids "$collection" "$collection_release_id" "$pangbank_api_url" "$out_dir/pangenome_api_ids.tsv"
 
 release_candidates=("$collection_release")
 if [[ "$collection_release" != v* ]]; then
@@ -191,7 +289,7 @@ fi
 if [[ -d "$pangenomes_root" ]]; then
     echo "[info] using local PanGBank mirror: $pangenomes_root" >&2
     echo "[info] using PanGBank API collection release id: $collection_release_id" >&2
-    export_from_pangenomes_root "$pangenomes_root"
+    export_from_pangenomes_root "$pangenomes_root" "$out_dir/pangenome_api_ids.tsv"
     printf '%s\n' "$pangenomes_root" > "$out_dir/pangenomes_root.txt"
     exit 0
 fi
