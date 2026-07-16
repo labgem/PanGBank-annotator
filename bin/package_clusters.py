@@ -7,6 +7,7 @@ import argparse
 import gzip
 import os
 import statistics
+import tempfile
 from collections import Counter
 from pathlib import Path
 
@@ -19,7 +20,7 @@ LEVELS = ("deep", "50", "80")
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--clusters-dir", type=Path, required=True)
-    parser.add_argument("--cluster-pattern", default="corrected_{level}.tsv")
+    parser.add_argument("--cluster-pattern", default="corrected_{level}.tsv.gz")
     parser.add_argument("--all-faa-gz", type=Path, required=True)
     parser.add_argument("--pangenome-families", type=Path, required=True)
     parser.add_argument("--collection-release-id", required=True)
@@ -81,8 +82,7 @@ def write_representative_fasta(all_faa_gz: Path, cluster_sizes: pd.DataFrame, ou
             if cluster_id is None:
                 continue
             out.write(f">{cluster_id} representative={seq_id}\n")
-            for i in range(0, len(seq), 80):
-                out.write(seq[i : i + 80] + "\n")
+            out.write(seq + "\n")
             remaining.discard(seq_id)
     if remaining:
         missing = ", ".join(sorted(remaining)[:10])
@@ -90,10 +90,11 @@ def write_representative_fasta(all_faa_gz: Path, cluster_sizes: pd.DataFrame, ou
 
 
 def read_pangenome_families(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, sep="\t", dtype=str)
+    df = pd.read_csv(path, sep="\t", dtype={"Pangenome_family_id": str})
     required = {"Pangenome_id", "Pangenome_family_id"}
     if not required.issubset(df.columns):
         raise ValueError(f"{path} must contain columns {sorted(required)}")
+    df["Pangenome_id"] = pd.to_numeric(df["Pangenome_id"], errors="raise").astype("int64")
     return df[["Pangenome_id", "Pangenome_family_id"]].dropna().drop_duplicates()
 
 
@@ -128,7 +129,7 @@ def write_parquets(
 
     all_per_pangenome = pd.concat(per_pangenome_frames, ignore_index=True).drop_duplicates()
     for pangenome_id, df in all_per_pangenome.groupby("Pangenome_id", sort=True):
-        out = per_pangenome_dir / f"PANFAM_{pangenome_id}.parquet"
+        out = per_pangenome_dir / f"PANFAM_p{pangenome_id}.parquet"
         df[["Pangenome_family_id", "Cluster_level", "Cluster_id"]].to_parquet(
             out, index=False, compression=compression
         )
@@ -171,8 +172,9 @@ def plot_cluster_size_distribution(
     after: dict[str, pd.DataFrame],
     out_path: Path,
 ) -> None:
-    os.environ.setdefault("XDG_CACHE_HOME", str(out_path.parent / ".cache"))
-    os.environ.setdefault("MPLCONFIGDIR", str(out_path.parent / ".matplotlib"))
+    cache_root = Path(tempfile.gettempdir()) / "panannotator-matplotlib"
+    os.environ.setdefault("XDG_CACHE_HOME", str(cache_root / "xdg"))
+    os.environ.setdefault("MPLCONFIGDIR", str(cache_root / "config"))
     import matplotlib
 
     matplotlib.use("Agg")
@@ -248,7 +250,7 @@ def main() -> None:
 
     for level in args.levels:
         corrected = args.clusters_dir / args.cluster_pattern.format(level=level)
-        raw = args.clusters_dir / f"deepclust_{level}.tsv"
+        raw = args.clusters_dir / f"deepclust_{level}.tsv.gz"
         if not corrected.exists():
             raise FileNotFoundError(f"Corrected cluster table not found: {corrected}")
         after[level] = read_clusters(corrected)
