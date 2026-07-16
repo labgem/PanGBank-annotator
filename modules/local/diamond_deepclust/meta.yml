@@ -11,6 +11,6 @@ output:
   - clusters:
       type: file
       description: DIAMOND centroid/member cluster table.
-      pattern: deepclust_*.tsv
+      pattern: deepclust_*.tsv.gz
 authors:
   - yhoblos
