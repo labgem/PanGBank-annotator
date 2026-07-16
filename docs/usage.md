@@ -43,3 +43,10 @@ Protein sequence data are read from the local PanGBank mirror:
 ```
 
 Each pangenome directory must contain `all_protein_families.faa.gz`.
+
+## Intermediate Cluster Tables
+
+DIAMOND cluster tables are compressed and kept in the Nextflow `work/`
+directory. They are not copied to the output directory by default. Add
+`--keep_raw_clusters true` if you want to keep them under
+`<outdir>/diamond/clusters/`.

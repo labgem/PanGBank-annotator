@@ -1,7 +1,7 @@
 process DIAMOND_DEEPCLUST {
     tag "${level}"
     label "process_deepclust"
-    publishDir "${params.outdir}/diamond/clusters", mode: "copy"
+    publishDir "${params.outdir}/diamond/clusters", mode: "copy", enabled: params.keep_raw_clusters
 
     input:
     tuple val(level), val(approx_id), path(db)

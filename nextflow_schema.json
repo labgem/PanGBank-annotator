@@ -274,6 +274,11 @@
                     "type": "string",
                     "default": "zstd",
                     "description": "Parquet compression codec."
+                },
+                "keep_raw_clusters": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Keep gzipped DIAMOND cluster intermediate tables under <outdir>/diamond/clusters/."
                 }
             }
         }
