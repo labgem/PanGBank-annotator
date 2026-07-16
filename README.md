@@ -19,7 +19,7 @@
 
 The current implementation contains the clustering stage:
 
-1. Resolve a PanGBank collection release and source (`all` or `refseq`).
+1. Resolve a PanGBank collection release and collection (`GTDB_all` or `GTDB_refseq`).
 2. Fetch `all_protein_families.faa.gz` records and build a pangenome-family map.
 3. Run DIAMOND `deepclust`, followed by `recluster` and `reassign` correction.
 4. Package PANFAM parquet files, representative FASTA files, and a report file.
@@ -35,7 +35,7 @@ Run the clustering stage with a PanGBank collection release:
 nextflow run panAnnotator \
    -profile <docker/singularity/.../institute> \
    --collection_release v1.0.0 \
-   --source all \
+   --collection GTDB_all \
    --outdir <OUTDIR>
 ```
 

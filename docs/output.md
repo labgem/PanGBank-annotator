@@ -15,7 +15,7 @@ fasta/PANFAM_80.faa.gz
 parquet/PANFAM_deep.parquet
 parquet/PANFAM_50.parquet
 parquet/PANFAM_80.parquet
-parquet/pangenomes/PANFAM_<pangenome_id>.parquet
+parquet/pangenomes/PANFAM_p<pangenome_id>.parquet
 PANFAM_report.txt
 ```
 
@@ -25,3 +25,6 @@ The fetch and DIAMOND intermediate outputs are published under:
 <outdir>/inputs/
 <outdir>/diamond/
 ```
+
+DIAMOND cluster tables under `<outdir>/diamond/clusters/` are written as
+`.tsv.gz` files.

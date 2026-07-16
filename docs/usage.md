@@ -5,12 +5,12 @@ Run from the repository root:
 ```bash
 nextflow run . \
   --collection_release v1.0.0 \
-  --source all \
+  --collection GTDB_all \
   --outdir outputs/panAnnotator/GTDB_all_v1.0.0 \
   -profile slurm
 ```
 
-Use `--source refseq` to process the `GTDB_refseq` collection.
+Use `--collection GTDB_refseq` to process the RefSeq-only collection.
 
 The workflow currently implements the clustering stage. The `--run_clustering`
 parameter is present so annotation can be added later as a second optional
@@ -21,6 +21,10 @@ stage without changing the top-level workflow shape.
 `--collection_release`
 
 : PanGBank collection release ID, for example `v1.0.0`.
+
+`--collection`
+
+: Full PanGBank collection name, for example `GTDB_all` or `GTDB_refseq`.
 
 `--outdir`
 
@@ -35,7 +39,7 @@ as `r<id>` and used in PANFAM cluster identifiers.
 Protein sequence data are read from the local PanGBank mirror:
 
 ```text
-<pangbank_root>/collections/GTDB_<source>/release_<collection_release>/data/pangenomes
+<pangbank_root>/collections/<collection>/release_<collection_release>/data/pangenomes
 ```
 
 Each pangenome directory must contain `all_protein_families.faa.gz`.
