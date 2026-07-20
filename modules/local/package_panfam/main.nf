@@ -1,12 +1,13 @@
 process PACKAGE_PANFAM {
     tag "PANFAM"
     label "process_high"
-    publishDir "${params.outdir}", mode: "copy"
+    conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    publishDir "${params.outdir}", mode: "copy", saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:
     path all_faa_gz
     path pangenome_families
-    path collection_release_id
+    val collection_release_id
     path cluster_tables
 
     output:
@@ -30,7 +31,7 @@ process PACKAGE_PANFAM {
       --clusters-dir clusters \\
       --all-faa-gz ${all_faa_gz} \\
       --pangenome-families ${pangenome_families} \\
-      --collection-release-id "\$(cat ${collection_release_id})" \\
+      --collection-release-id "${collection_release_id}" \\
       --out-dir PANFAM \\
       --report-dir multiqc \\
       --levels ${levels_arg} \\

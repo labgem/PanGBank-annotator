@@ -1,0 +1,15 @@
+---
+channels:
+  - conda-forge
+dependencies:
+  - conda-forge::bash
+  - conda-forge::coreutils
+  - conda-forge::findutils
+  - conda-forge::gawk
+  - conda-forge::gzip
+  - conda-forge::matplotlib
+  - conda-forge::numpy
+  - conda-forge::pandas
+  - conda-forge::pyarrow
+  - conda-forge::python=3.11
+  - conda-forge::zstandard

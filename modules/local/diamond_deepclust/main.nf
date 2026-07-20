@@ -1,7 +1,8 @@
 process DIAMOND_DEEPCLUST {
     tag "${level}"
     label "process_deepclust"
-    publishDir "${params.outdir}/diamond/clusters", mode: "copy", enabled: params.keep_raw_clusters
+    conda "${projectDir}/modules/local/envs/diamond_2_1_24/environment.yml"
+    publishDir "${params.outdir}/diamond/clusters", mode: "copy", enabled: params.keep_raw_clusters, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:
     tuple val(level), val(approx_id), path(db)

@@ -1,7 +1,8 @@
 process DIAMOND_RECLUSTER {
     tag "${level}"
     label "process_deepclust"
-    publishDir "${params.outdir}/diamond/clusters", mode: "copy", enabled: params.keep_raw_clusters
+    conda "${projectDir}/modules/local/envs/diamond_2_1_13/environment.yml"
+    publishDir "${params.outdir}/diamond/clusters", mode: "copy", enabled: params.keep_raw_clusters, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:
     tuple val(level), path(clusters), path(db)
@@ -12,10 +13,15 @@ process DIAMOND_RECLUSTER {
 
     script:
     def approx_id = level == "deep" ? params.deep_approx_id : level
+    def diamond_bin = workflow.profile.tokenize(',').contains('local_tools') ? '/env/products/diamond/2.1.13/bin/diamond' : 'diamond'
     """
     gzip -dc ${clusters} > input_clusters_${level}.tsv
+    diamond_bin="${diamond_bin}"
+    if [[ "\$diamond_bin" != "diamond" && ! -x "\$diamond_bin" ]]; then
+      diamond_bin="diamond"
+    fi
 
-    /env/products/diamond/2.1.13/bin/diamond recluster \\
+    "\$diamond_bin" recluster \\
       -d ${db} \\
       --clusters input_clusters_${level}.tsv \\
       -o reclustered_${level}.tsv \\
@@ -35,7 +41,7 @@ process DIAMOND_RECLUSTER {
 
     cat <<-END_VERSIONS > versions_recluster_${level}.yml
     "${task.process}":
-        diamond: \$(/env/products/diamond/2.1.13/bin/diamond --version | sed 's/^diamond version //')
+        diamond: \$("\$diamond_bin" --version | sed 's/^diamond version //')
     END_VERSIONS
     """
 }
