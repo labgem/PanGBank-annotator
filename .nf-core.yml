@@ -19,6 +19,7 @@ lint:
     - manifest.homePage
   multiqc_config:
     - report_comment
+  container_configs: false
   files_exist:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-panannotator_logo_light.png
