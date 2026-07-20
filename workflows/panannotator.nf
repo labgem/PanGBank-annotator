@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { CLUSTERING } from '../subworkflows/clustering/main'
+include { CLUSTERING } from '../subworkflows/local/clustering/main'
 include { MULTIQC    } from '../modules/nf-core/multiqc/main'
 
 /*
@@ -41,6 +41,7 @@ workflow PANANNOTATOR {
     all_faa = CLUSTERING.out.all_faa
     pangenome_families = CLUSTERING.out.pangenome_families
     corrected_clusters = CLUSTERING.out.corrected_clusters
+    software_versions = CLUSTERING.out.software_versions
     multiqc_report = ch_multiqc_report
     versions = ch_versions
 }

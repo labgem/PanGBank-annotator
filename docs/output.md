@@ -52,9 +52,13 @@ The fetch and DIAMOND database intermediate outputs are published under:
 ```text
 <outdir>/inputs/
 <outdir>/diamond/dbs/
+<outdir>/pipeline_info/software_versions.yml
 ```
 
 DIAMOND cluster tables are kept compressed in the Nextflow `work/` directory for
 resume/provenance, but they are not published by default. Use
 `--keep_raw_clusters true` to also copy them to
-`<outdir>/diamond/clusters/` as `.tsv.gz` files.
+`<outdir>/diamond/clusters/` as `.tsv.gz` files. Software versions for the
+clustering workflow are always published in the consolidated
+`<outdir>/pipeline_info/software_versions.yml` file, even when raw cluster
+tables are not kept.
