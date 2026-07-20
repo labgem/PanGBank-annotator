@@ -16,13 +16,6 @@
 include { PANANNOTATOR  } from './workflows/panannotator'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_panannotator_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_panannotator_pipeline'
-include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_panannotator_pipeline'
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    GENOME PARAMETER VALUES
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,6 +38,7 @@ workflow LABGEM_PANANNOTATOR {
     emit:
     multiqc_report = PANANNOTATOR.out.multiqc_report // channel: /path/to/multiqc_report.html
     panfam = PANANNOTATOR.out.panfam
+    software_versions = PANANNOTATOR.out.software_versions
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,7 +58,6 @@ workflow {
         params.monochrome_logs,
         args,
         params.outdir,
-        params.collection_release,
         params.help,
         params.help_full,
         params.show_hidden

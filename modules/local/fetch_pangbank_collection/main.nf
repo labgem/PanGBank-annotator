@@ -1,7 +1,8 @@
 process FETCH_PANGBANK_COLLECTION {
-    tag "${params.collection}:${params.collection_release}"
+    tag "${params.collection}:${params.release}"
     label "process_medium"
-    publishDir "${params.outdir}/inputs", mode: "copy"
+    conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    publishDir "${params.outdir}/inputs", mode: "copy", saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     output:
     path "all_protein_families.faa.gz", emit: all_faa
@@ -15,7 +16,7 @@ process FETCH_PANGBANK_COLLECTION {
     script:
     """
     bash ${projectDir}/bin/fetch_pangbank_collection.sh \\
-      --collection-release ${params.collection_release} \\
+      --collection-release ${params.release} \\
       --collection ${params.collection} \\
       --out-dir . \\
       --pangbank-root ${params.pangbank_root} \\

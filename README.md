@@ -34,7 +34,7 @@ Run the clustering stage with a PanGBank collection release:
 ```bash
 nextflow run panAnnotator \
    -profile <docker/singularity/.../institute> \
-   --collection_release v1.0.0 \
+   --release v1.0.0 \
    --collection GTDB_all \
    --outdir <OUTDIR>
 ```

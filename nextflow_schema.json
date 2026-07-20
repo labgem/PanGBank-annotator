@@ -10,12 +10,12 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["collection_release", "outdir"],
+            "required": ["outdir"],
             "properties": {
                 "input": {
                     "type": "string",
                     "mimetype": "text/plain",
-                    "description": "Unused nf-core compatibility placeholder. Use collection_release and collection to select PanGBank input data.",
+                    "description": "Unused nf-core compatibility placeholder. Use release and collection to select PanGBank input data.",
                     "hidden": true
                 },
                 "outdir": {
@@ -36,7 +36,7 @@
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
                 },
-                "collection_release": {
+                "release": {
                     "type": "string",
                     "description": "PanGBank collection release ID, for example v1.0.0.",
                     "fa_icon": "fas fa-database"
@@ -47,6 +47,18 @@
                     "enum": ["GTDB_all", "GTDB_refseq"],
                     "description": "Full PanGBank collection name to process.",
                     "fa_icon": "fas fa-layer-group"
+                },
+                "test_data": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Hidden FASTA input used by the built-in test profile.",
+                    "hidden": true
+                },
+                "test_release_id": {
+                    "type": "string",
+                    "default": "rtest",
+                    "description": "Hidden release identifier used in PANFAM IDs for the built-in test profile.",
+                    "hidden": true
                 },
                 "pangbank_root": {
                     "type": "string",
