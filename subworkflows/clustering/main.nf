@@ -47,6 +47,7 @@ workflow CLUSTERING {
 
     emit:
     panfam = PACKAGE_PANFAM.out.panfam
+    multiqc = PACKAGE_PANFAM.out.multiqc
     all_faa = FETCH_PANGBANK_COLLECTION.out.all_faa
     pangenome_families = FETCH_PANGBANK_COLLECTION.out.pangenome_families
     corrected_clusters = DIAMOND_REASSIGN.out.clusters

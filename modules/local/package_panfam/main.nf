@@ -11,6 +11,9 @@ process PACKAGE_PANFAM {
 
     output:
     path "PANFAM", emit: panfam
+    path "multiqc/custom_content/*_mqc.yaml", emit: multiqc
+    path "multiqc/analysis/raw_data/*.tsv", emit: multiqc_raw_data
+    path "multiqc/multiqc_plots/*.png", emit: multiqc_plots
     path "versions_package_panfam.yml", emit: versions
 
     script:
@@ -29,6 +32,7 @@ process PACKAGE_PANFAM {
       --pangenome-families ${pangenome_families} \\
       --collection-release-id "\$(cat ${collection_release_id})" \\
       --out-dir PANFAM \\
+      --report-dir multiqc \\
       --levels ${levels_arg} \\
       --compression ${params.compression}
 
