@@ -2,7 +2,8 @@ process DIAMOND_REASSIGN {
     tag "${level}"
     label "process_deepclust"
     conda "${projectDir}/modules/local/envs/diamond_2_1_13/environment.yml"
-    publishDir "${params.outdir}/diamond/clusters", mode: "copy", enabled: params.keep_raw_clusters, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'https://depot.galaxyproject.org/singularity/diamond:2.1.13--h13889ed_0' : 'quay.io/biocontainers/diamond:2.1.13--h13889ed_0'}"
+    publishDir "${params.outdir}/clustering/raw/diamond/clusters", mode: "copy", enabled: params.keep_raw_clusters, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:
     tuple val(level), path(clusters), path(db)

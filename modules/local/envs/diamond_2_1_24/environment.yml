@@ -1,8 +1,0 @@
----
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - bioconda::diamond=2.1.24
-  - conda-forge::bash
-  - conda-forge::gzip
