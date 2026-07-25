@@ -18,8 +18,8 @@ PANFAM_<cluster_level>_r<collection_release_api_id>_<incremental_cluster_id>
 Later annotation can consume:
 
 ```text
-PANFAM/fasta/PANFAM_deep.faa.gz
-PANFAM/fasta/PANFAM_50.faa.gz
-PANFAM/fasta/PANFAM_80.faa.gz
-PANFAM/parquet/*.parquet
+clustering/fasta/PANFAM_deep.faa.gz
+clustering/fasta/PANFAM_50.faa.gz
+clustering/fasta/PANFAM_80.faa.gz
+clustering/parquet/*.parquet
 ```

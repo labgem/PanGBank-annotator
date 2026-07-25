@@ -5,7 +5,6 @@ include { DIAMOND_DEEPCLUST } from '../../../modules/local/diamond_deepclust/mai
 include { DIAMOND_RECLUSTER } from '../../../modules/local/diamond_recluster/main'
 include { DIAMOND_REASSIGN } from '../../../modules/local/diamond_reassign/main'
 include { PACKAGE_PANFAM } from '../../../modules/local/package_panfam/main'
-include { COLLATE_SOFTWARE_VERSIONS } from '../../../modules/local/collate_software_versions/main'
 
 workflow CLUSTERING {
     main:
@@ -67,14 +66,11 @@ workflow CLUSTERING {
         .mix(DIAMOND_REASSIGN.out.versions)
         .mix(PACKAGE_PANFAM.out.versions)
 
-    COLLATE_SOFTWARE_VERSIONS(ch_versions.collect())
-
     emit:
     panfam = PACKAGE_PANFAM.out.panfam
     multiqc = PACKAGE_PANFAM.out.multiqc
     all_faa = ch_all_faa
     pangenome_families = ch_pangenome_families
     corrected_clusters = DIAMOND_REASSIGN.out.clusters
-    software_versions = COLLATE_SOFTWARE_VERSIONS.out.versions
     versions = ch_versions
 }

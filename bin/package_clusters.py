@@ -767,18 +767,18 @@ def write_analysis_outputs(
     after: dict[str, pd.DataFrame],
     report_dir: Path,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[Path]]:
-    raw_dir = report_dir / "analysis" / "raw_data"
-    plots_dir = report_dir / "multiqc_plots"
-    raw_dir.mkdir(parents=True, exist_ok=True)
+    tables_dir = report_dir / "tables"
+    plots_dir = report_dir / "plots"
+    tables_dir.mkdir(parents=True, exist_ok=True)
     plots_dir.mkdir(parents=True, exist_ok=True)
 
     summary = build_summary_metrics(before, after)
     distribution = build_cluster_size_distribution({"before_ec": before, "after_ec": after})
     bin_summary = build_size_bin_summary(distribution)
 
-    summary.to_csv(raw_dir / "cluster_summary_metrics.tsv", sep="\t", index=False)
-    distribution.to_csv(raw_dir / "cluster_size_distribution.tsv", sep="\t", index=False)
-    bin_summary.to_csv(raw_dir / "cluster_size_bin_summary.tsv", sep="\t", index=False)
+    summary.to_csv(tables_dir / "cluster_summary_metrics.tsv", sep="\t", index=False)
+    distribution.to_csv(tables_dir / "cluster_size_distribution.tsv", sep="\t", index=False)
+    bin_summary.to_csv(tables_dir / "cluster_size_bin_summary.tsv", sep="\t", index=False)
 
     plot_paths = [
         plots_dir / "PANFAM_cluster_size_rank_distribution.png",

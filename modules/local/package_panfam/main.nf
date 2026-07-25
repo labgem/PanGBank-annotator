@@ -11,10 +11,10 @@ process PACKAGE_PANFAM {
     path cluster_tables
 
     output:
-    path "PANFAM", emit: panfam
-    path "multiqc/custom_content/*_mqc.yaml", emit: multiqc
-    path "multiqc/analysis/raw_data/*.tsv", emit: multiqc_raw_data
-    path "multiqc/multiqc_plots/*.png", emit: multiqc_plots
+    path "clustering", emit: panfam
+    path "report/clustering/custom_content/*_mqc.yaml", emit: multiqc
+    path "report/clustering/tables/*.tsv", emit: multiqc_raw_data
+    path "report/clustering/plots/*.png", emit: multiqc_plots
     path "versions_package_panfam.yml", emit: versions
 
     script:
@@ -32,8 +32,8 @@ process PACKAGE_PANFAM {
       --all-faa-gz ${all_faa_gz} \\
       --pangenome-families ${pangenome_families} \\
       --collection-release-id "${collection_release_id}" \\
-      --out-dir PANFAM \\
-      --report-dir multiqc \\
+      --out-dir clustering \\
+      --report-dir report/clustering \\
       --levels ${levels_arg} \\
       --compression ${params.compression}
 
