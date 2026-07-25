@@ -1,0 +1,9 @@
+---
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - bioconda::hmmer
+  - conda-forge::bash
+  - conda-forge::python=3.11
