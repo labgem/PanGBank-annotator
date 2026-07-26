@@ -5,6 +5,24 @@ import argparse
 import json
 
 
+SKIP_TOOLS = {
+    "awk",
+    "bash",
+    "cat",
+    "cp",
+    "coreutils",
+    "find",
+    "findutils",
+    "gawk",
+    "gzip",
+    "mkdir",
+    "mv",
+    "rm",
+    "sed",
+    "sort",
+}
+
+
 def quote(value):
     return json.dumps(str(value))
 
@@ -35,19 +53,24 @@ def main():
 
     versions = {}
     for version_file in sorted(args.version_files):
-        process, tools = parse_simple_yaml(version_file)
-        if process in versions and versions[process] != tools:
-            raise SystemExit(
-                f"conflicting software versions for {process}: "
-                f"{versions[process]} != {tools}"
-            )
-        versions[process] = tools
+        _process, tools = parse_simple_yaml(version_file)
+        for tool, version in tools.items():
+            tool = tool.strip().lower()
+            version = str(version).strip()
+            if not tool or tool in SKIP_TOOLS or not version:
+                continue
+            versions.setdefault(tool, set()).add(version)
 
     with args.out.open("w") as out:
-        for process in sorted(versions):
-            out.write(f"{quote(process)}:\n")
-            for tool, version in sorted(versions[process].items()):
-                out.write(f"    {quote(tool)}: {quote(version)}\n")
+        out.write('"software_versions":\n')
+        for tool in sorted(versions):
+            tool_versions = sorted(versions[tool])
+            if len(tool_versions) == 1:
+                out.write(f"    {quote(tool)}: {quote(tool_versions[0])}\n")
+            else:
+                out.write(f"    {quote(tool)}:\n")
+                for version in tool_versions:
+                    out.write(f"        - {quote(version)}\n")
 
 
 if __name__ == "__main__":
