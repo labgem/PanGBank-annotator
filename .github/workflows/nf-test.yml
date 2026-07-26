@@ -51,4 +51,6 @@ jobs:
       - name: Check helper scripts
         run: |
           bash -n bin/fetch_pangbank_collection.sh
+          bash -n bin/finalize_interproscan6_tsv.sh
           python -m py_compile bin/package_clusters.py
+          python -m py_compile bin/package_annotations.py
