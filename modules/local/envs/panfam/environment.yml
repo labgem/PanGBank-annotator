@@ -1,13 +1,14 @@
 ---
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
   - conda-forge::bash
   - conda-forge::coreutils
   - conda-forge::findutils
   - conda-forge::gawk
   - conda-forge::gzip
-  - conda-forge::matplotlib
+  - conda-forge::matplotlib-base
   - conda-forge::numpy
   - conda-forge::pandas
   - conda-forge::pyarrow

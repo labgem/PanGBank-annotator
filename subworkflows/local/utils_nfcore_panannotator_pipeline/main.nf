@@ -74,8 +74,9 @@ workflow PIPELINE_INITIALISATION {
     //
     // Check config provided to the pipeline
     //
+    def non_boolean_cli_args = nextflow_cli_args.findAll { !['true', 'false'].contains(it.toString()) }
     UTILS_NFCORE_PIPELINE (
-        nextflow_cli_args
+        non_boolean_cli_args
     )
 
     //
