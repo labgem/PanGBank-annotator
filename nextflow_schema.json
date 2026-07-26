@@ -226,6 +226,13 @@
                     "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
                     "hidden": true
                 },
+                "modules_testdata_base_path": {
+                    "type": "string",
+                    "fa_icon": "far fa-check-circle",
+                    "description": "Base URL or local path to location of nf-core module test dataset files",
+                    "default": "https://raw.githubusercontent.com/nf-core/test-datasets/modules/data/",
+                    "hidden": true
+                },
                 "trace_report_suffix": {
                     "type": "string",
                     "fa_icon": "far calendar",
@@ -256,6 +263,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Run the PANFAM clustering stage."
+                },
+                "run_annotation": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Run the annotation stage after clustering."
                 },
                 "levels": {
                     "type": "string",
@@ -290,7 +302,216 @@
                 "keep_raw_clusters": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Keep gzipped DIAMOND cluster intermediate tables under <outdir>/diamond/clusters/."
+                    "description": "Keep gzipped DIAMOND cluster intermediate tables under <outdir>/clustering/raw/diamond/clusters/."
+                }
+            }
+        },
+        "annotation_options": {
+            "title": "Annotation options",
+            "type": "object",
+            "fa_icon": "fas fa-tags",
+            "description": "Options controlling PANFAM annotation.",
+            "properties": {
+                "annotation_tools": {
+                    "type": "string",
+                    "default": "interpro,deepkoala,eggnog,amrfinder",
+                    "description": "Comma-separated annotation tools to run. Allowed values: interpro,deepkoala,eggnog,amrfinder."
+                },
+                "all_protein_tools": {
+                    "type": "string",
+                    "default": "amrfinder",
+                    "description": "Comma-separated annotation tools that should run on all pangenome proteins instead of PANFAM_80 representatives."
+                },
+                "keep_raw_annotations": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Keep gzipped raw annotation outputs under <outdir>/annotation/raw/<tool>/."
+                },
+                "annotation_chunk_size": {
+                    "type": "integer",
+                    "default": 80000,
+                    "description": "Number of protein records per FASTA chunk for chunked annotation tools."
+                },
+                "interpro_apps": {
+                    "type": "string",
+                    "default": "Pfam,NCBIFAM",
+                    "description": "Comma-separated InterProScan 6 applications to run. Native mode supports Pfam and NCBIFAM; imported mode supports all applications available in the vendored InterProScan 6 applications config and writes one parquet per requested app."
+                },
+                "interpro_mode": {
+                    "type": "string",
+                    "default": "native",
+                    "enum": ["native", "imported"],
+                    "description": "InterPro annotation implementation. native runs Pfam/NCBIFAM HMMER modules directly; imported runs the vendored InterProScan 6 DSL2 workflow in the parent Nextflow graph."
+                },
+                "interpro_pfam_version": {
+                    "type": "string",
+                    "default": "38.1",
+                    "description": "Pfam data version under --interproscan6_datadir used by native InterPro mode.",
+                    "hidden": true
+                },
+                "interpro_ncbifam_version": {
+                    "type": "string",
+                    "default": "18.0",
+                    "description": "NCBIFAM data version under --interproscan6_datadir used by native InterPro mode.",
+                    "hidden": true
+                },
+                "interproscan6_version": {
+                    "type": "string",
+                    "default": "6.0.1",
+                    "description": "Vendored InterProScan 6 workflow version."
+                },
+                "interproscan6_interpro_version": {
+                    "type": "string",
+                    "default": "108.0",
+                    "description": "InterPro data release to use from --interproscan6_datadir."
+                },
+                "interproscan6_datadir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "InterProScan 6 data directory."
+                },
+                "interproscan6_batch_size": {
+                    "type": "integer",
+                    "default": 100000,
+                    "description": "InterProScan 6 batchSize."
+                },
+                "interproscan6_sub_batch_size": {
+                    "type": "integer",
+                    "default": 5000,
+                    "description": "InterProScan 6 subBatchSize.",
+                    "hidden": true
+                },
+                "interproscan6_no_matches_api": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Disable InterProScan 6 Matches API lookup and run analyses fully locally.",
+                    "hidden": true
+                },
+                "interproscan6_skip_version_check": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Skip InterProScan 6 remote InterPro compatibility checks when using local data.",
+                    "hidden": true
+                },
+                "interproscan6_cpus": {
+                    "type": "integer",
+                    "default": 2,
+                    "description": "CPU threads used by dynamic imported InterProScan 6 application tasks.",
+                    "hidden": true
+                },
+                "deepkoala_resources": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "default": "/env/export/labgem_bank/WP3/deepkoala/resources",
+                    "description": "DeepKOALA resources directory containing model-date subdirectories such as 202502 or 202603. Recommended for packaged/container DeepKOALA execution.",
+                    "hidden": true
+                },
+                "deepkoala_workdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Legacy DeepKOALA source checkout directory. Used only when --deepkoala_resources is not provided.",
+                    "hidden": true
+                },
+                "deepkoala_cli_module": {
+                    "type": "string",
+                    "default": "deepkoala.cli",
+                    "description": "DeepKOALA Python module.",
+                    "hidden": true
+                },
+                "deepkoala_container": {
+                    "type": "string",
+                    "default": "ghcr.io/labgem/deepkoala:0.1-beta",
+                    "description": "Container image containing the DeepKOALA Python package.",
+                    "hidden": true
+                },
+                "deepkoala_model": {
+                    "type": "string",
+                    "default": "full",
+                    "description": "DeepKOALA model name.",
+                    "hidden": true
+                },
+                "deepkoala_date": {
+                    "type": "string",
+                    "default": "latest",
+                    "description": "DeepKOALA model date.",
+                    "hidden": true
+                },
+                "deepkoala_batch_size": {
+                    "type": "integer",
+                    "default": 128,
+                    "description": "DeepKOALA batch size.",
+                    "hidden": true
+                },
+                "deepkoala_num_workers": {
+                    "type": "integer",
+                    "default": 4,
+                    "description": "DeepKOALA number of workers.",
+                    "hidden": true
+                },
+                "deepkoala_topk": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "DeepKOALA top-k predictions.",
+                    "hidden": true
+                },
+                "deepkoala_detail": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Ask DeepKOALA for detailed output.",
+                    "hidden": true
+                },
+                "deepkoala_use_gpu": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Allow DeepKOALA to use GPU.",
+                    "hidden": true
+                },
+                "eggnog_data_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "eggNOG-mapper data directory.",
+                    "hidden": true
+                },
+                "eggnog_search_mode": {
+                    "type": "string",
+                    "default": "diamond",
+                    "description": "eggNOG-mapper search mode.",
+                    "hidden": true
+                },
+                "eggnog_mapper_db": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "eggNOG-mapper search database.",
+                    "hidden": true
+                },
+                "amrfinder_db": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Optional AMRFinder+ database directory. If unset, AMRFinder+ uses the database configured in its own installation.",
+                    "hidden": true
+                },
+                "db_root": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Optional root directory for panAnnotator databases. When set, standard InterProScan, eggNOG, DeepKOALA, and AMRFinder+ paths are derived from this root.",
+                    "hidden": true
+                },
+                "prepare_databases": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Download or update databases required by the requested annotation tools, then write the database manifest.",
+                    "hidden": true
+                },
+                "skip_db_validation": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Skip annotation database path validation before running annotation.",
+                    "hidden": true
+                },
+                "db_manifest": {
+                    "type": "string",
+                    "description": "Optional database manifest sourced by local annotation modules.",
+                    "hidden": true
                 }
             }
         }
@@ -301,6 +522,9 @@
         },
         {
             "$ref": "#/$defs/clustering_options"
+        },
+        {
+            "$ref": "#/$defs/annotation_options"
         },
         {
             "$ref": "#/$defs/reference_genome_options"
