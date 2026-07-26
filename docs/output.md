@@ -1,64 +1,130 @@
 # LABGeM/panAnnotator: Output
 
-The clustering stage publishes final deliverables under:
+panAnnotator publishes final deliverables under stage-specific directories:
 
 ```text
-<outdir>/PANFAM/
+<outdir>/
+├── inputs/
+├── clustering/
+├── annotation/
+├── report/
+└── pipeline_info/
 ```
 
-Expected files:
+## Inputs
 
 ```text
-fasta/PANFAM_deep.faa.gz
-fasta/PANFAM_50.faa.gz
-fasta/PANFAM_80.faa.gz
-parquet/PANFAM_deep.parquet
-parquet/PANFAM_50.parquet
-parquet/PANFAM_80.parquet
-parquet/pangenomes/PANFAM_p<pangenome_id>.parquet
-PANFAM_report.txt
+inputs/
+├── all_protein_families.faa.gz
+├── collection_release_id.txt
+├── pangenome_families.tsv
+└── annotation/
+    ├── panfam_80.faa.gz
+    └── all_proteins.faa.gz
 ```
 
-`PANFAM_report.txt` is a compact summary table.
+`inputs/annotation/` is only populated when annotation is enabled. It records
+the FASTA view used by annotation tools.
 
-The workflow publishes one report directory under:
+## Clustering
 
 ```text
-<outdir>/multiqc/
-├── analysis/
-│   └── raw_data/
-│       ├── cluster_summary_metrics.tsv
-│       ├── cluster_size_distribution.tsv
-│       └── cluster_size_bin_summary.tsv
-├── custom_content/
-│   └── panfam_clustering_mqc.yaml
+clustering/
+├── PANFAM_report.txt
+├── fasta/
+│   ├── PANFAM_deep.faa.gz
+│   ├── PANFAM_50.faa.gz
+│   └── PANFAM_80.faa.gz
+└── parquet/
+    ├── PANFAM_deep.parquet
+    ├── PANFAM_50.parquet
+    ├── PANFAM_80.parquet
+    └── pangenomes/
+        └── PANFAM_p<pangenome_id>.parquet
+```
+
+`PANFAM_report.txt` is a compact clustering summary table. Raw DIAMOND cluster
+tables are kept in the Nextflow `work/` directory by default. Use
+`--keep_raw_clusters true` to also publish them under:
+
+```text
+clustering/raw/diamond/
+```
+
+## Annotation
+
+```text
+annotation/
+├── parquet/
+│   ├── pfam.parquet
+│   ├── ncbifam.parquet
+│   ├── deepkoala.parquet
+│   ├── eggnog.parquet
+│   ├── amrfinder.parquet
+│   └── pangenomes/
+│       └── <annotation_type>_p<pangenome_id>.parquet
+└── raw/
+    ├── interpro/
+    │   ├── native/
+    │   └── imported/
+    ├── deepkoala/
+    ├── eggnog/
+    └── amrfinder/
+```
+
+The `raw/` directory is not published by default. Raw annotation files are
+gzipped inside Nextflow `work/` for resume/provenance. Use
+`--keep_raw_annotations true` to also publish gzipped raw annotation outputs
+under `annotation/raw/<tool>/`.
+
+Default annotation deliverables are:
+
+```text
+annotation/parquet/
+    ├── pfam.parquet
+    ├── ncbifam.parquet
+    ├── <other_interpro_app>.parquet
+    ├── deepkoala.parquet
+    ├── eggnog.parquet
+    ├── amrfinder.parquet
+    └── pangenomes/
+        └── <annotation_type>_p<pangenome_id>.parquet
+```
+
+InterPro application, DeepKOALA/KOfam, and AMRFinder+ parquet files contain
+`Pangenome_id`, `Pangenome_family_id`, and `Annotation_id`. InterPro imported
+mode uses one normalized lowercase parquet name per requested app, for example
+`superfamily.parquet`. The eggNOG parquet
+contains `Pangenome_id`, `Pangenome_family_id`, and the full `eggNOG_OGs`
+value. Per-pangenome files omit `Pangenome_id` because it is encoded in the
+filename as `p<pangenome_id>`.
+
+## Report
+
+```text
+report/
+├── multiqc_report.html
 ├── multiqc_data/
-├── multiqc_plots/
-│   ├── PANFAM_cluster_reduction_summary.png
-│   ├── PANFAM_cluster_size_rank_distribution.png
-│   ├── PANFAM_singleton_rates.png
-│   ├── PANFAM_cluster_size_bins_combined.png
-│   ├── PANFAM_cluster_size_distribution.png
-│   ├── PANFAM_cluster_size_ecdf.png
-│   └── PANFAM_cluster_size_ccdf.png
-└── multiqc_report.html
+├── clustering/
+│   ├── custom_content/
+│   ├── plots/
+│   └── tables/
+└── annotation/
+    ├── custom_content/
+    ├── plots/
+    └── tables/
 ```
 
-`analysis/raw_data/` contains the raw tables used for report statistics and
-plots. `multiqc_plots/` contains the PNG plots embedded in the MultiQC report.
+The `tables/` directories contain the raw data used for plots and MultiQC
+sections. The `plots/` directories contain PNG files embedded in MultiQC.
 
-The fetch and DIAMOND database intermediate outputs are published under:
+## Pipeline Info
 
 ```text
-<outdir>/inputs/
-<outdir>/diamond/dbs/
-<outdir>/pipeline_info/software_versions.yml
+pipeline_info/
+├── execution_report_*.html
+├── execution_timeline_*.html
+├── execution_trace_*.txt
+├── pipeline_dag_*.html
+└── software_versions.yml
 ```
-
-DIAMOND cluster tables are kept compressed in the Nextflow `work/` directory for
-resume/provenance, but they are not published by default. Use
-`--keep_raw_clusters true` to also copy them to
-`<outdir>/diamond/clusters/` as `.tsv.gz` files. Software versions for the
-clustering workflow are always published in the consolidated
-`<outdir>/pipeline_info/software_versions.yml` file, even when raw cluster
-tables are not kept.
