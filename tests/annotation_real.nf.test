@@ -1,0 +1,26 @@
+nextflow_pipeline {
+
+    name "Test real annotation on built-in FASTA"
+    script "../main.nf"
+    tag "annotation_real"
+
+    test("-profile test with real annotation") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                run_annotation = true
+            }
+        }
+
+        then {
+            assert workflow.success
+            assert new File("${outputDir}/annotation/parquet/pfam.parquet").exists()
+            assert new File("${outputDir}/annotation/parquet/ncbifam.parquet").exists()
+            assert new File("${outputDir}/annotation/parquet/deepkoala.parquet").exists()
+            assert new File("${outputDir}/annotation/parquet/eggnog.parquet").exists()
+            assert new File("${outputDir}/annotation/parquet/amrfinder.parquet").exists()
+            assert new File("${outputDir}/pipeline_info/software_versions.yml").exists()
+        }
+    }
+}

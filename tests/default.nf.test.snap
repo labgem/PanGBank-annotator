@@ -1,0 +1,106 @@
+{
+    "-profile test": {
+        "content": [
+            {
+                "DIAMOND_DEEPCLUST": {
+                    "diamond": "2.1.13"
+                },
+                "DIAMOND_MAKEDB": {
+                    "diamond": "2.1.13"
+                },
+                "DIAMOND_REASSIGN": {
+                    "diamond": "2.1.13"
+                },
+                "DIAMOND_RECLUSTER": {
+                    "diamond": "2.1.13"
+                },
+                "PACKAGE_PANFAM": {
+                    "matplotlib": "3.10.8",
+                    "pandas": "2.3.3",
+                    "python": "3.11.9"
+                },
+                "PREPARE_DIRECT_INPUT": {
+                    "awk": "GNU Awk 5.3.1, API 4.0, PMA Avon 8-g1, (GNU MPFR 4.2.1, GNU MP 6.3.0)"
+                }
+            },
+            [
+                "PANFAM",
+                "PANFAM/PANFAM_report.txt",
+                "PANFAM/fasta",
+                "PANFAM/fasta/PANFAM_50.faa.gz",
+                "PANFAM/fasta/PANFAM_80.faa.gz",
+                "PANFAM/fasta/PANFAM_deep.faa.gz",
+                "PANFAM/parquet",
+                "PANFAM/parquet/PANFAM_50.parquet",
+                "PANFAM/parquet/PANFAM_80.parquet",
+                "PANFAM/parquet/PANFAM_deep.parquet",
+                "PANFAM/parquet/pangenomes",
+                "PANFAM/parquet/pangenomes/PANFAM_p1.parquet",
+                "diamond",
+                "diamond/dbs",
+                "diamond/dbs/panfam.dmnd",
+                "inputs",
+                "inputs/collection_release_id.txt",
+                "inputs/pangenome_families.tsv",
+                "inputs/test_representatives.faa",
+                "multiqc",
+                "multiqc/analysis",
+                "multiqc/analysis/raw_data",
+                "multiqc/analysis/raw_data/cluster_size_bin_summary.tsv",
+                "multiqc/analysis/raw_data/cluster_size_distribution.tsv",
+                "multiqc/analysis/raw_data/cluster_summary_metrics.tsv",
+                "multiqc/custom_content",
+                "multiqc/custom_content/panfam_clustering_mqc.yaml",
+                "multiqc/multiqc_data",
+                "multiqc/multiqc_data/llms-full.txt",
+                "multiqc/multiqc_data/multiqc.log",
+                "multiqc/multiqc_data/multiqc.parquet",
+                "multiqc/multiqc_data/multiqc_citations.txt",
+                "multiqc/multiqc_data/multiqc_data.json",
+                "multiqc/multiqc_data/multiqc_sources.txt",
+                "multiqc/multiqc_plots",
+                "multiqc/multiqc_plots/PANFAM_cluster_reduction_summary.png",
+                "multiqc/multiqc_plots/PANFAM_cluster_size_bins_combined.png",
+                "multiqc/multiqc_plots/PANFAM_cluster_size_ccdf.png",
+                "multiqc/multiqc_plots/PANFAM_cluster_size_distribution.png",
+                "multiqc/multiqc_plots/PANFAM_cluster_size_ecdf.png",
+                "multiqc/multiqc_plots/PANFAM_cluster_size_rank_distribution.png",
+                "multiqc/multiqc_plots/PANFAM_singleton_rates.png",
+                "multiqc/multiqc_report.html",
+                "pipeline_info",
+                "pipeline_info/software_versions.yml"
+            ],
+            [
+                "PANFAM_report.txt:md5,bc84e6af2770c7761b69e0ba07eef7c8",
+                "PANFAM_50.faa.gz:md5,4159f1b40a483bae598c081417bb0fc3",
+                "PANFAM_80.faa.gz:md5,294e50b812fc5db8f2428181fd5b39af",
+                "PANFAM_deep.faa.gz:md5,8b0f89cf2375a77b3e7022aa8ea868b5",
+                "PANFAM_50.parquet:md5,2e298c5bfc390cbf3a4f45ae1e078ddd",
+                "PANFAM_80.parquet:md5,be94c8078e6a5f808b23850261966d45",
+                "PANFAM_deep.parquet:md5,dc125e26799a2c1429b513c9a2596dcd",
+                "PANFAM_p1.parquet:md5,717a6d304cd230866f26b967d3d46a73",
+                "panfam.dmnd:md5,4670d6267a99279deaca650f834a0028",
+                "collection_release_id.txt:md5,d9367a46883db5c9a9d70969f1d10410",
+                "pangenome_families.tsv:md5,778645e67ed556735a1792a42423c6db",
+                "test_representatives.faa:md5,fd2df98112a3a35261fa06e7f8fb95db",
+                "cluster_size_bin_summary.tsv:md5,59a37151e5083a0a484e86f3fe57109c",
+                "cluster_size_distribution.tsv:md5,c61650b0cb3f8d5e3b6285d5f621ed77",
+                "cluster_summary_metrics.tsv:md5,7def00468591260d5c7ae407ce054ff8",
+                "panfam_clustering_mqc.yaml:md5,b3f0ef8450075a09db5533a06c7585e4",
+                "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
+                "PANFAM_cluster_reduction_summary.png:md5,ea6c3331fb84d52c6ae439b29378ea7f",
+                "PANFAM_cluster_size_bins_combined.png:md5,b79a96b6ba8a0fcf8e87e001ef4ef2fc",
+                "PANFAM_cluster_size_ccdf.png:md5,d20dbdb1c9886d0a762eb26b50d70151",
+                "PANFAM_cluster_size_distribution.png:md5,b2c5ba6974a5e32fa7cd7a435f595d6c",
+                "PANFAM_cluster_size_ecdf.png:md5,92a41bf0751250e0abc9942c1f30a00d",
+                "PANFAM_cluster_size_rank_distribution.png:md5,6009899da003ff379246da8af2fbd0e6",
+                "PANFAM_singleton_rates.png:md5,6cc4457ca27b6fe6ae1c9f32d60bf65e"
+            ]
+        ],
+        "timestamp": "2026-07-21T10:48:38.350112787",
+        "meta": {
+            "nf-test": "0.9.4",
+            "nextflow": "25.10.4"
+        }
+    }
+}
