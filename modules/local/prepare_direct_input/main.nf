@@ -2,15 +2,24 @@ process PREPARE_DIRECT_INPUT {
     tag "test_data"
     label "process_low"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
-    publishDir "${params.outdir}/inputs", mode: "copy", saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
+    publishDir "${params.outdir}/inputs", mode: "copy", saveAs: { filename ->
+        if (filename.startsWith("versions_")) {
+            return null
+        } else if (filename == "collection_metadata.yml" || filename == "pangenome_api_ids.tsv") {
+            return "metadata/${filename}"
+        }
+        return filename
+    }
 
     input:
     path all_faa
 
     output:
     path all_faa, emit: all_faa
-    path "pangenome_families.tsv", emit: pangenome_families
-    path "collection_release_id.txt", emit: collection_release_id
+    path "pangenome_families.tsv.gz", emit: pangenome_families
+    path "collection_metadata.yml", emit: metadata
+    path "pangenome_api_ids.tsv", emit: pangenome_api_ids
+    val params.test_release_id, emit: collection_release_id
     path "versions_prepare_direct_input.yml", emit: versions
 
     script:
@@ -24,7 +33,19 @@ process PREPARE_DIRECT_INPUT {
       }
     ' ${all_faa} >> pangenome_families.tsv
 
-    printf '%s\\n' "${params.test_release_id}" > collection_release_id.txt
+    family_count=\$(awk 'substr(\$0, 1, 1) == ">" { count++ } END { print count + 0 }' ${all_faa})
+    gzip -n -f pangenome_families.tsv
+
+    cat > collection_metadata.yml <<-END_METADATA
+    input_mode: test_data
+    release_id: "${params.test_release_id}"
+    input_fasta: "${params.test_data}"
+    pangenome_count: 1
+    family_count: "\${family_count}"
+    END_METADATA
+
+    printf 'Local_pangenome_name\\tPangenome_id\\n' > pangenome_api_ids.tsv
+    printf 'test_data\\t1\\n' >> pangenome_api_ids.tsv
 
     cat <<-END_VERSIONS > versions_prepare_direct_input.yml
     "${task.process}":

@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--collection-release-id", required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--report-dir", type=Path)
+    parser.add_argument("--skip-report", action="store_true")
     parser.add_argument("--levels", nargs="+", default=list(LEVELS))
     parser.add_argument("--compression", default="zstd")
     return parser.parse_args()
@@ -888,9 +889,10 @@ def main() -> None:
 
     pangenome_families = read_pangenome_families(args.pangenome_families)
     write_parquets(packaged, pangenome_families, args.out_dir, args.compression)
-    summary, _distribution, plot_paths = write_analysis_outputs(before, after, report_dir)
-    write_minimal_report(summary, args.out_dir / "PANFAM_report.txt")
-    write_multiqc_custom_content(summary, plot_paths, report_dir)
+    if not args.skip_report:
+        summary, _distribution, plot_paths = write_analysis_outputs(before, after, report_dir)
+        write_minimal_report(summary, args.out_dir / "PANFAM_report.txt")
+        write_multiqc_custom_content(summary, plot_paths, report_dir)
 
 
 if __name__ == "__main__":

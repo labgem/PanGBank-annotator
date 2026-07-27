@@ -11,8 +11,8 @@ Usage: fetch_pangbank_collection.sh \
   [--pangbank-api-url URL]
 
 Resolve a PanGBank collection release through the PanGBank API, write
-collection_release_id.txt as r<api_release_id>, write pangenomes.txt, write
-pangenome_families.tsv from FASTA record IDs, and concatenate local
+collection_metadata.yml, write pangenome_families.tsv.gz from FASTA record IDs,
+and concatenate local
 all_protein_families.faa.gz files into all_protein_families.faa.gz.
 
 Sequence data are read from the local PanGBank data mirror:
@@ -216,7 +216,6 @@ export_from_pangenomes_root() {
     fi
 
     printf 'Pangenome_id\tPangenome_family_id\n' > "$out_dir/pangenome_families.tsv"
-    : > "$out_dir/pangenomes.txt"
 
     declare -A pangenome_ids=()
     while IFS=$'\t' read -r local_name pangenome_id; do
@@ -234,7 +233,6 @@ export_from_pangenomes_root() {
                 exit 1
             fi
 
-            printf '%s\n' "$pangenome_id" >> "$out_dir/pangenomes.txt"
             fasta="$root/$local_pangenome_name/all_protein_families.faa.gz"
             if [[ ! -s "$fasta" ]]; then
                 echo "[error] missing FASTA for pangenome $local_pangenome_name: $fasta" >&2
@@ -256,10 +254,13 @@ export_from_pangenomes_root() {
         echo "[error] no all_protein_families.faa.gz data found in $root" >&2
         exit 1
     fi
-    if [[ "$(wc -l < "$out_dir/pangenome_families.tsv")" -le 1 ]]; then
+    family_count="$(( $(wc -l < "$out_dir/pangenome_families.tsv") - 1 ))"
+    if [[ "$family_count" -le 0 ]]; then
         echo "[error] no pangenome family records found in $root" >&2
         exit 1
     fi
+    gzip -n -f "$out_dir/pangenome_families.tsv"
+    rm -f "$local_pangenomes"
 }
 
 collection_release_id="$(resolve_collection_release_id "$collection" "$collection_release" "$pangbank_api_url")"
@@ -290,7 +291,16 @@ if [[ -d "$pangenomes_root" ]]; then
     echo "[info] using local PanGBank mirror: $pangenomes_root" >&2
     echo "[info] using PanGBank API collection release id: $collection_release_id" >&2
     export_from_pangenomes_root "$pangenomes_root" "$out_dir/pangenome_api_ids.tsv"
-    printf '%s\n' "$pangenomes_root" > "$out_dir/pangenomes_root.txt"
+    {
+        printf 'collection: "%s"\n' "$collection"
+        printf 'release: "%s"\n' "$collection_release"
+        printf 'collection_release_id: "%s"\n' "$collection_release_id"
+        printf 'pangbank_api_url: "%s"\n' "$pangbank_api_url"
+        printf 'pangbank_root: "%s"\n' "$pangbank_root"
+        printf 'pangenomes_root: "%s"\n' "$pangenomes_root"
+        printf 'pangenome_count: %s\n' "$(( $(wc -l < "$out_dir/pangenome_api_ids.tsv") - 1 ))"
+        printf 'family_count: %s\n' "$family_count"
+    } > "$out_dir/collection_metadata.yml"
     exit 0
 fi
 

@@ -9,18 +9,28 @@ process PACKAGE_PANFAM {
     path pangenome_families
     val collection_release_id
     path cluster_tables
+    val package_levels
+    val output_dir
+    val skip_report
 
     output:
-    path "clustering", emit: panfam
-    path "report/clustering/custom_content/*_mqc.yaml", emit: multiqc
-    path "report/clustering/tables/*.tsv", emit: multiqc_raw_data
-    path "report/clustering/plots/*.png", emit: multiqc_plots
-    path "versions_package_panfam.yml", emit: versions
+    path "${output_dir}", emit: panfam
+    path "report/clustering/custom_content/*_mqc.yaml", emit: multiqc, optional: true
+    path "report/clustering/tables/*.tsv", emit: multiqc_raw_data, optional: true
+    path "report/clustering/plots/*.png", emit: multiqc_plots, optional: true
+    path "versions_package_*.yml", emit: versions
 
     script:
-    def levels_arg = params.levels instanceof List
-        ? params.levels.join(' ')
-        : params.levels.toString().split(',').collect { it.trim() }.findAll { it }.join(' ')
+    def levels_arg = package_levels instanceof List
+        ? package_levels.join(' ')
+        : package_levels.toString().split(',').collect { it.trim() }.findAll { it }.join(' ')
+    def cluster_pattern = params.run_cluster_correction.toString() == 'true'
+        ? 'corrected_{level}.tsv.gz'
+        : 'deepclust_{level}.tsv.gz'
+    def report_arg = skip_report.toString() == 'true'
+        ? '--skip-report'
+        : '--report-dir report/clustering'
+    def safe_output_dir = output_dir.toString().replaceAll(/[^A-Za-z0-9_.-]/, '_')
 
     """
     mkdir -p clusters
@@ -32,12 +42,13 @@ process PACKAGE_PANFAM {
       --all-faa-gz ${all_faa_gz} \\
       --pangenome-families ${pangenome_families} \\
       --collection-release-id "${collection_release_id}" \\
-      --out-dir clustering \\
-      --report-dir report/clustering \\
+      --out-dir ${output_dir} \\
+      ${report_arg} \\
+      --cluster-pattern "${cluster_pattern}" \\
       --levels ${levels_arg} \\
       --compression ${params.compression}
 
-    python - <<'PY' > versions_package_panfam.yml
+    python - <<'PY' > versions_package_${safe_output_dir}.yml
 import platform
 import pandas
 

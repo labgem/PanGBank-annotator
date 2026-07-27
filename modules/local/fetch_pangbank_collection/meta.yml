@@ -16,10 +16,14 @@ output:
   - pangenome_families:
       type: file
       description: API-derived integer Pangenome_id to FASTA-derived Pangenome_family_id map.
-      pattern: pangenome_families.tsv
+      pattern: pangenome_families.tsv.gz
   - pangenome_api_ids:
       type: file
       description: Local pangenome directory name to PanGBank integer pangenome ID map.
       pattern: pangenome_api_ids.tsv
+  - metadata:
+      type: file
+      description: PanGBank collection release, API, and local mirror provenance metadata.
+      pattern: collection_metadata.yml
 authors:
   - yhoblos
