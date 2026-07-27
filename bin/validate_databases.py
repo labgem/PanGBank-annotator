@@ -97,6 +97,16 @@ def newest_complete_deepkoala_model(path: Path, model: str) -> str | None:
     return None
 
 
+def resolve_amrfinder_db(path: str | Path) -> Path:
+    db_dir = Path(path)
+    if (db_dir / "AMRProt.fa.phr").exists():
+        return db_dir
+    latest = db_dir / "latest"
+    if (latest / "AMRProt.fa.phr").exists():
+        return latest
+    return db_dir
+
+
 def fetch_deepkoala_current_version() -> str | None:
     try:
         with urllib.request.urlopen(DEEPKOALA_PAGE, timeout=30) as response:
@@ -475,7 +485,7 @@ def main() -> int:
 
     if "amrfinder" in requested:
         if args.amrfinder_db:
-            validator.add("amrfinder", "database directory", args.amrfinder_db)
+            validator.add("amrfinder", "database directory", resolve_amrfinder_db(args.amrfinder_db))
         else:
             validator.add(
                 "amrfinder",

@@ -9,7 +9,7 @@ process SPLIT_FASTA {
 
     output:
     tuple val(meta), path("chunks/*.faa"), emit: chunks
-    path "versions_split_fasta.yml", emit: versions
+    path "versions_split_fasta_${meta.id}.yml", emit: versions
 
     script:
     """
@@ -48,6 +48,6 @@ process SPLIT_FASTA {
     {
         printf '"%s":\n' "${task.process}"
         printf '    awk: "%s"\n' "\$(awk --version 2>/dev/null | head -n 1 || echo unknown)"
-    } > versions_split_fasta.yml
+    } > versions_split_fasta_${meta.id}.yml
     """
 }

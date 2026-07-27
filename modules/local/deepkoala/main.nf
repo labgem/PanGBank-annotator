@@ -11,7 +11,7 @@ process DEEPKOALA {
     output:
     tuple val(sample_id), path("${sample_id}.deepkoala.tsv.gz"), emit: tsv
     path "${sample_id}.deepkoala.raw.csv.gz", emit: raw
-    path "versions_deepkoala.yml", emit: versions
+    path "versions_deepkoala_${sample_id}.yml", emit: versions
 
     script:
     """
@@ -40,19 +40,20 @@ process DEEPKOALA {
       exit 1
     fi
 
-    if [[ -n "\$DEEPKOALA_RESOURCES" ]]; then
-      if [[ ! -d "\$DEEPKOALA_RESOURCES" ]]; then
-        echo "DeepKOALA resources directory is missing or invalid: \$DEEPKOALA_RESOURCES" >&2
+    if [[ -z "\$DEEPKOALA_RESOURCES" || ! -d "\$DEEPKOALA_RESOURCES" ]]; then
+      echo "DeepKOALA resources directory is missing or invalid: \$DEEPKOALA_RESOURCES" >&2
+      exit 1
+    fi
+    export DEEPKOALA_RESOURCES="\$(readlink -f "\$DEEPKOALA_RESOURCES")"
+
+    DEEPKOALA_RUN_PREFIX=()
+    if [[ -n "\$DEEPKOALA_WORKDIR" ]]; then
+      if [[ ! -d "\$DEEPKOALA_WORKDIR" ]]; then
+        echo "DeepKOALA source checkout is missing or invalid: \$DEEPKOALA_WORKDIR" >&2
         exit 1
       fi
-      export DEEPKOALA_RESOURCES="\$(readlink -f "\$DEEPKOALA_RESOURCES")"
-      DEEPKOALA_RUN_PREFIX=()
-    elif [[ -n "\$DEEPKOALA_WORKDIR" && -d "\$DEEPKOALA_WORKDIR" ]]; then
       export PYTHONPATH="\$(readlink -f "\$DEEPKOALA_WORKDIR"):\${PYTHONPATH:-}"
       DEEPKOALA_RUN_PREFIX=(env PYTHONPATH="\$PYTHONPATH")
-    else
-      echo "DeepKOALA requires either --deepkoala_resources for packaged/container execution or --deepkoala_workdir for legacy source-checkout execution." >&2
-      exit 1
     fi
 
     DETAIL_ARG=()
@@ -132,7 +133,7 @@ try:
 except Exception:
     print('deepkoala_package: "unknown"')
 PY
-    } > versions_deepkoala.yml
+    } > versions_deepkoala_${sample_id}.yml
     """
 
     stub:
@@ -145,6 +146,6 @@ PY
     {
         printf '"%s":\n' "${task.process}"
         printf '    deepkoala: "stub"\n'
-    } > versions_deepkoala.yml
+    } > versions_deepkoala_${sample_id}.yml
     """
 }

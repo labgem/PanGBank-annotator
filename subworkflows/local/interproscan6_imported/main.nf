@@ -5,14 +5,31 @@ workflow INTERPROSCAN6_IMPORTED {
     input_fasta
 
     main:
-    def apps = params.interpro_apps.toString().split(',').collect { it.trim().toLowerCase() }.findAll { it }
     def raw_apps_config = new ConfigSlurper().parse(
         new File("${projectDir}/subworkflows/interproscan6/conf/applications.config").toURI().toURL()
     ).params.appsConfig
     def apps_config = raw_apps_config.collectEntries { app_name, app_config ->
         [(app_name.toString().toLowerCase()): app_config]
     }
-    new File("${params.outdir}/annotation/interpro/imported").mkdirs()
+    def normalize_interpro_app = { value ->
+        value.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")
+    }
+    def app_aliases = [:]
+    apps_config.each { app_name, app_config ->
+        app_aliases[normalize_interpro_app(app_name)] = app_name
+        app_aliases[normalize_interpro_app(app_config.name)] = app_name
+        (app_config.aliases ?: []).each { alias ->
+            app_aliases[normalize_interpro_app(alias)] = app_name
+        }
+    }
+    def apps = params.interpro_apps.toString().split(',').collect { raw_app ->
+        def normalized = normalize_interpro_app(raw_app)
+        def app_name = app_aliases[normalized]
+        if (!app_name) {
+            error "Unsupported InterProScan 6 application '${raw_app}'. Allowed values: ${apps_config.keySet().sort().join(', ')}"
+        }
+        app_name
+    }.findAll { it }.unique()
 
     input_fasta
         .map { meta, fasta -> tuple(meta, fasta) }
@@ -23,7 +40,7 @@ workflow INTERPROSCAN6_IMPORTED {
         apps,
         apps_config,
         file(params.interproscan6_datadir),
-        file("${params.outdir}/annotation/interpro/imported/panfam80.interproscan6"),
+        file("panfam80.interproscan6"),
         ["tsv"],
         params.interproscan6_interpro_version,
         params.interproscan6_version,

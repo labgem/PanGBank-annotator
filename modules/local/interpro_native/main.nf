@@ -12,7 +12,7 @@ process INTERPRO_NATIVE {
     tuple val(meta), path("${meta.id}.interpro.tsv.gz"), emit: tsv
     path "*.domtblout.gz", optional: true, emit: domtblout
     path "*.hmmsearch.out.gz", optional: true, emit: search_logs
-    path "versions_interpro_native.yml", emit: versions
+    path "versions_interpro_native_${meta.id}.yml", emit: versions
 
     script:
     def apps = params.interpro_apps.toString().split(',').collect { it.trim().toLowerCase() }.findAll { it }
@@ -54,7 +54,7 @@ process INTERPRO_NATIVE {
         printf '    pfam: "%s"\n' "${params.interpro_pfam_version}"
         printf '    ncbifam: "%s"\n' "${params.interpro_ncbifam_version}"
         printf '    interpro: "%s"\n' "${params.interproscan6_interpro_version}"
-    } > versions_interpro_native.yml
+    } > versions_interpro_native_${meta.id}.yml
     """
 
     stub:
@@ -70,6 +70,6 @@ EOF
         printf '    pfam: "stub"\n'
         printf '    ncbifam: "stub"\n'
         printf '    interpro: "stub"\n'
-    } > versions_interpro_native.yml
+    } > versions_interpro_native_${meta.id}.yml
     """
 }

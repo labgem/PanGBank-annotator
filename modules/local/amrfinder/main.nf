@@ -10,16 +10,25 @@ process AMRFINDER {
 
     output:
     tuple val(meta), path("${meta.id}.amrfinder.tsv.gz"), emit: tsv
-    path "versions_amrfinder.yml", emit: versions
+    path "versions_amrfinder_${meta.id}.yml", emit: versions
 
     script:
-    def db_arg = params.amrfinder_db ? "--database \"${params.amrfinder_db}\"" : ""
     """
     set -euo pipefail
 
+    AMRFINDER_DB="${params.amrfinder_db ?: ''}"
+    if [[ -n "\$AMRFINDER_DB" && ! -f "\$AMRFINDER_DB/AMRProt.fa.phr" && -f "\$AMRFINDER_DB/latest/AMRProt.fa.phr" ]]; then
+        AMRFINDER_DB="\$AMRFINDER_DB/latest"
+    fi
+
+    DB_ARG=()
+    if [[ -n "\$AMRFINDER_DB" ]]; then
+        DB_ARG=(--database "\$AMRFINDER_DB")
+    fi
+
     amrfinder -p "${fasta}" \\
         --threads "${task.cpus}" \\
-        ${db_arg} \\
+        "\${DB_ARG[@]}" \\
         -o "${meta.id}.amrfinder.tsv"
 
     gzip -f "${meta.id}.amrfinder.tsv"
@@ -27,7 +36,7 @@ process AMRFINDER {
     {
         printf '"%s":\n' "${task.process}"
         printf '    amrfinder: "%s"\n' "\$(amrfinder --version 2>&1 | head -n 1 | sed 's/^AMRFinderPlus //')"
-    } > versions_amrfinder.yml
+    } > versions_amrfinder_${meta.id}.yml
     """
 
     stub:
@@ -41,6 +50,6 @@ EOF
     {
         printf '"%s":\n' "${task.process}"
         printf '    amrfinder: "stub"\n'
-    } > versions_amrfinder.yml
+    } > versions_amrfinder_${meta.id}.yml
     """
 }
