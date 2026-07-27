@@ -24,6 +24,13 @@ process PACKAGE_INTERPRO_ANNOTATIONS {
     IFS=',' read -r -a interpro_tools <<< "${tools}"
     for raw_tool in "\${interpro_tools[@]}"; do
         tool="\$(printf '%s' "\${raw_tool}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')"
+        case "\${tool}" in
+            cathgene3d) tool="gene3d" ;;
+            cathfunfam) tool="funfam" ;;
+            interpron) tool="interpro_n" ;;
+            signalpeuk) tool="signalp_euk" ;;
+            signalpprok) tool="signalp_prok" ;;
+        esac
         if [[ -z "\${tool}" ]]; then
             continue
         fi

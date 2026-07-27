@@ -462,6 +462,35 @@ def write_multiqc(tables: dict[str, pd.DataFrame], plot_paths: list[Path], out_d
     (mqc_dir / "panfam_annotation_mqc.yaml").write_text("\n".join(yaml_lines) + "\n", encoding="utf-8")
 
 
+def write_simple_report(tables: dict[str, pd.DataFrame], out_dir: Path) -> None:
+    coverage = tables["coverage_summary"].copy()
+    vocab = tables["vocabulary_size"][["tool", "vocab_size", "total_mentions"]].copy()
+    report = coverage.merge(vocab, on="tool", how="left")
+    report = report[
+        [
+            "tool",
+            "tool_display",
+            "total_proteins",
+            "n_with_annotations",
+            "coverage",
+            "total_mentions",
+            "vocab_size",
+            "mean_annotations_per_protein",
+            "median_annotations",
+            "max_annotations",
+        ]
+    ].rename(
+        columns={
+            "tool_display": "tool_name",
+            "n_with_annotations": "annotated_proteins",
+            "total_mentions": "annotation_mentions",
+            "vocab_size": "unique_annotation_terms",
+        }
+    )
+    report = report.sort_values("tool", key=lambda col: col.map({tool: i for i, tool in enumerate(sort_tools(report["tool"].tolist()))}))
+    report.to_csv(out_dir / "annotation_report.txt", sep="\t", index=False)
+
+
 def main() -> None:
     args = parse_args()
     tables_dir = args.out_dir / "tables"
@@ -493,6 +522,7 @@ def main() -> None:
     plot_tool_counts(tables["tool_count_distribution"], plot_paths[3])
     plot_vocab(tables["vocabulary_size"], plot_paths[4])
     plot_top_terms(tables["top_term_coverage"], plot_paths[5])
+    write_simple_report(tables, args.out_dir)
     write_multiqc(tables, plot_paths, args.out_dir)
 
 

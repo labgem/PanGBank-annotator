@@ -2,13 +2,19 @@ process REPORT_ANNOTATIONS {
     tag "annotation"
     label "process_medium"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
-    publishDir "${params.outdir}/report/annotation", mode: "copy", saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
+    publishDir "${params.outdir}/annotation", mode: "copy", saveAs: { filename ->
+        filename == "annotation_report.txt" ? filename : null
+    }
+    publishDir "${params.outdir}/report/annotation", mode: "copy", saveAs: { filename ->
+        filename == "annotation_report.txt" || filename.startsWith("versions_") ? null : filename
+    }
 
     input:
     path annotation_parquets
     path pangenome_families
 
     output:
+    path "annotation_report.txt", emit: report
     path "custom_content/*_mqc.yaml", emit: multiqc
     path "tables/*.tsv", emit: tables
     path "plots/*.png", emit: plots

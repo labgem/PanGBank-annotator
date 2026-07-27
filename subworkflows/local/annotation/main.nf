@@ -6,7 +6,8 @@ include { INTERPROSCAN6_IMPORTED } from '../interproscan6_imported/main'
 include { DEEPKOALA } from '../../../modules/local/deepkoala/main'
 include { EGGNOGMAPPER } from '../../../modules/nf-core/eggnogmapper/main'
 include { PARSE_EGGNOG } from '../../../modules/local/parse_eggnog_nfcore/main'
-include { SPLIT_FASTA } from '../../../modules/local/split_fasta/main'
+include { SPLIT_FASTA as SPLIT_PANFAM80_FASTA } from '../../../modules/local/split_fasta/main'
+include { SPLIT_FASTA as SPLIT_ALL_PROTEIN_FASTA } from '../../../modules/local/split_fasta/main'
 include { AMRFINDER } from '../../../modules/local/amrfinder/main'
 include { PACKAGE_INTERPRO_ANNOTATIONS } from '../../../modules/local/package_interpro_annotations/main'
 include { PACKAGE_ANNOTATIONS as PACKAGE_DEEPKOALA_ANNOTATIONS } from '../../../modules/local/package_annotations/main'
@@ -62,12 +63,69 @@ workflow ANNOTATION {
         ch_prepped = PREP_INPUT.out.combine(database_manifest).map { clean_faa, proteins, manifest ->
             tuple("panfam80", clean_faa, proteins)
         }
-        ch_prepped_meta = ch_prepped.map { sample_id, faa, proteins -> tuple([id: sample_id], faa, proteins) }
+        ch_panfam80_chunks = channel.empty()
+        ch_panfam80_chunk_meta = channel.empty()
+        def needs_panfam80_chunks = panfam80_tools.any { tool ->
+            tool in ["deepkoala", "eggnog"] || (tool == "interpro" && params.interpro_mode == "native")
+        }
+        if (needs_panfam80_chunks) {
+            SPLIT_PANFAM80_FASTA(ch_prepped.map { sample_id, faa, proteins -> tuple([id: sample_id], faa) })
+            ch_versions = ch_versions.mix(SPLIT_PANFAM80_FASTA.out.versions)
+            ch_panfam80_proteins = ch_prepped.map { sample_id, faa, proteins -> proteins }
+            ch_panfam80_chunks = SPLIT_PANFAM80_FASTA.out.chunks
+                .combine(ch_panfam80_proteins)
+                .flatMap { meta, chunks, proteins ->
+                    def chunk_files = chunks instanceof List ? chunks : [chunks]
+                    chunk_files.collect { chunk -> tuple(chunk.baseName, chunk, proteins) }
+                }
+            ch_panfam80_chunk_meta = ch_panfam80_chunks.map { sample_id, faa, proteins -> tuple([id: sample_id], faa, proteins) }
+        }
 
         if (requested_tools.contains("interpro") && !all_protein_tools.contains("interpro")) {
-            def interpro_apps = params.interpro_apps.toString().split(',').collect { it.trim().toLowerCase() }.findAll { it }
+            def normalize_interpro_app = { value ->
+                value.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")
+            }
+            def interpro_app_aliases = [
+                antifam: "antifam",
+                cathgene3d: "cathgene3d",
+                gene3d: "cathgene3d",
+                cathfunfam: "cathfunfam",
+                funfam: "cathfunfam",
+                cdd: "cdd",
+                coils: "coils",
+                deeptmhmm: "deeptmhmm",
+                hamap: "hamap",
+                interpron: "interpro_n",
+                mobidblite: "mobidblite",
+                ncbifam: "ncbifam",
+                panther: "panther",
+                phobius: "phobius",
+                pfam: "pfam",
+                pirsf: "pirsf",
+                pirsr: "pirsr",
+                prints: "prints",
+                prositepatterns: "prositepatterns",
+                prositeprofiles: "prositeprofiles",
+                sfld: "sfld",
+                signalpeuk: "signalp_euk",
+                signalpprok: "signalp_prok",
+                smart: "smart",
+                superfamily: "superfamily",
+                tmbed: "tmbed",
+            ]
+            def interpro_apps = params.interpro_apps.toString().split(',').collect { raw_app ->
+                def app_name = interpro_app_aliases[normalize_interpro_app(raw_app)]
+                if (!app_name) {
+                    error "Unsupported InterProScan 6 application '${raw_app}'. Allowed values: ${interpro_app_aliases.values().unique().sort().join(', ')}"
+                }
+                app_name
+            }.findAll { it }.unique()
             if (params.interpro_mode == "native") {
-                INTERPRO_NATIVE(ch_prepped.map { sample_id, faa, proteins -> tuple([id: sample_id], faa) })
+                def unsupported_native_apps = interpro_apps.findAll { !(it in ["pfam", "ncbifam"]) }
+                if (unsupported_native_apps) {
+                    error "--interpro_mode native supports only Pfam and NCBIFAM. Use --interpro_mode imported for: ${unsupported_native_apps.join(', ')}"
+                }
+                INTERPRO_NATIVE(ch_panfam80_chunks.map { sample_id, faa, proteins -> tuple([id: sample_id], faa) })
                 ch_interpro_tsv = INTERPRO_NATIVE.out.tsv
                 ch_versions = ch_versions.mix(INTERPRO_NATIVE.out.versions)
             } else if (params.interpro_mode == "imported") {
@@ -95,7 +153,7 @@ workflow ANNOTATION {
         }
 
         if (requested_tools.contains("deepkoala") && !all_protein_tools.contains("deepkoala")) {
-            DEEPKOALA(ch_prepped)
+            DEEPKOALA(ch_panfam80_chunks)
             PACKAGE_DEEPKOALA_ANNOTATIONS(
                 "deepkoala",
                 "panfam_80",
@@ -110,7 +168,7 @@ workflow ANNOTATION {
 
         if (requested_tools.contains("eggnog") && !all_protein_tools.contains("eggnog")) {
             EGGNOGMAPPER(
-                ch_prepped_meta.map { meta, faa, proteins -> tuple(meta, faa) },
+                ch_panfam80_chunk_meta.map { meta, faa, proteins -> tuple(meta, faa) },
                 channel.value(tuple(params.eggnog_search_mode, file(params.eggnog_mapper_db))),
                 channel.value(file(params.eggnog_data_dir))
             )
@@ -134,8 +192,8 @@ workflow ANNOTATION {
         ch_all_meta = PREPARE_ALL_PROTEIN_ANNOTATION_INPUT.out.fasta.combine(database_manifest).map { faa, manifest -> tuple([id: "all_proteins"], faa) }
 
         if (requested_tools.contains("amrfinder") && all_protein_tools.contains("amrfinder")) {
-            SPLIT_FASTA(ch_all_meta)
-            ch_amr_chunks = SPLIT_FASTA.out.chunks.flatMap { meta, chunks ->
+            SPLIT_ALL_PROTEIN_FASTA(ch_all_meta)
+            ch_amr_chunks = SPLIT_ALL_PROTEIN_FASTA.out.chunks.flatMap { meta, chunks ->
                 def chunk_files = chunks instanceof List ? chunks : [chunks]
                 chunk_files.collect { chunk -> tuple([id: chunk.baseName], chunk) }
             }
@@ -147,7 +205,7 @@ workflow ANNOTATION {
                 panfam_dir,
                 pangenome_families
             )
-            ch_versions = ch_versions.mix(SPLIT_FASTA.out.versions).mix(AMRFINDER.out.versions).mix(PACKAGE_AMRFINDER_ANNOTATIONS.out.versions)
+            ch_versions = ch_versions.mix(SPLIT_ALL_PROTEIN_FASTA.out.versions).mix(AMRFINDER.out.versions).mix(PACKAGE_AMRFINDER_ANNOTATIONS.out.versions)
             ch_global_parquet = ch_global_parquet.mix(PACKAGE_AMRFINDER_ANNOTATIONS.out.global)
             ch_pangenome_parquet = ch_pangenome_parquet.mix(PACKAGE_AMRFINDER_ANNOTATIONS.out.pangenomes)
         }

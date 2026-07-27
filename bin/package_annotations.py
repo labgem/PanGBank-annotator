@@ -12,6 +12,47 @@ from pathlib import Path
 import pandas as pd
 
 
+INTERPRO_TOOL_ALIASES = {
+    "antifam": "antifam",
+    "cdd": "cdd",
+    "cathgene3d": "gene3d",
+    "gene3d": "gene3d",
+    "cathfunfam": "funfam",
+    "funfam": "funfam",
+    "coils": "coils",
+    "deeptmhmm": "deeptmhmm",
+    "hamap": "hamap",
+    "interpron": "interpro_n",
+    "mobidblite": "mobidblite",
+    "ncbifam": "ncbifam",
+    "panther": "panther",
+    "pfam": "pfam",
+    "phobius": "phobius",
+    "pirsf": "pirsf",
+    "pirsr": "pirsr",
+    "prints": "prints",
+    "prositepatterns": "prositepatterns",
+    "prositeprofiles": "prositeprofiles",
+    "sfld": "sfld",
+    "signalp": "signalp",
+    "signalpeuk": "signalp_euk",
+    "signalpprok": "signalp_prok",
+    "smart": "smart",
+    "superfamily": "superfamily",
+    "tmbed": "tmbed",
+}
+
+INTERPRO_ANALYSIS_ALIASES = {
+    "cathgene3d": "gene3d",
+    "cathfunfam": "funfam",
+    "gene3d": "gene3d",
+    "funfam": "funfam",
+    "interpron": "interpro_n",
+    "signalpeuk": "signalp",
+    "signalpprok": "signalp",
+}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tool", required=True)
@@ -108,7 +149,7 @@ def read_eggnog(paths: list[Path]) -> pd.DataFrame:
 
 
 def read_interpro(paths: list[Path], tool: str) -> pd.DataFrame:
-    analysis_filter = None if tool == "interpro" else normalize_tool_name(tool)
+    analysis_filter = None if tool == "interpro" else canonical_interpro_analysis(tool)
     rows = []
     raw_order = 0
     for path in paths:
@@ -117,7 +158,7 @@ def read_interpro(paths: list[Path], tool: str) -> pd.DataFrame:
             for row in reader:
                 if not row or row[0].startswith("#"):
                     continue
-                analysis = normalize_tool_name(row[3] if len(row) > 3 else "")
+                analysis = canonical_interpro_analysis(row[3] if len(row) > 3 else "")
                 if analysis_filter and analysis != analysis_filter:
                     continue
                 rows.append(
@@ -135,6 +176,16 @@ def read_interpro(paths: list[Path], tool: str) -> pd.DataFrame:
 
 def normalize_tool_name(value: object) -> str:
     return re.sub(r"[^a-z0-9]+", "", clean(value).lower())
+
+
+def canonical_interpro_tool(value: object) -> str:
+    normalized = normalize_tool_name(value)
+    return INTERPRO_TOOL_ALIASES.get(normalized, normalized)
+
+
+def canonical_interpro_analysis(value: object) -> str:
+    normalized = normalize_tool_name(value)
+    return INTERPRO_ANALYSIS_ALIASES.get(normalized, normalized)
 
 
 def read_amrfinder(paths: list[Path]) -> pd.DataFrame:
@@ -189,10 +240,14 @@ def read_annotations(tool: str, raw: list[Path]) -> pd.DataFrame:
     if tool in {
         "antifam",
         "cdd",
+        "cathgene3d",
+        "cathfunfam",
         "coils",
+        "funfam",
         "gene3d",
         "hamap",
         "interpro",
+        "interpro_n",
         "mobidblite",
         "ncbifam",
         "panther",
@@ -205,6 +260,8 @@ def read_annotations(tool: str, raw: list[Path]) -> pd.DataFrame:
         "prositeprofiles",
         "sfld",
         "signalp",
+        "signalp_euk",
+        "signalp_prok",
         "smart",
         "superfamily",
         "tigrfam",
@@ -220,6 +277,7 @@ def read_annotations(tool: str, raw: list[Path]) -> pd.DataFrame:
 
 def main() -> None:
     args = parse_args()
+    args.tool = canonical_interpro_tool(args.tool)
     annotations = read_annotations(args.tool, args.raw)
     annotations = normalize_annotation_frame(annotations, args.tool)
     annotations = annotations[annotations["Query_id"].astype(str).str.len() > 0].copy()

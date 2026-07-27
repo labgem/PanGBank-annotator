@@ -25,6 +25,11 @@ workflow PANANNOTATOR {
     ch_software_versions = channel.empty()
     ch_multiqc_files = channel.empty()
     ch_database_manifest = channel.empty()
+    ch_panfam = channel.empty()
+    ch_annotation_panfam = channel.empty()
+    ch_all_faa = channel.empty()
+    ch_pangenome_families = channel.empty()
+    ch_corrected_clusters = channel.empty()
 
     run_clustering = params.run_clustering.toString() == 'true'
     run_annotation = params.run_annotation.toString() == 'true'
@@ -37,15 +42,25 @@ workflow PANANNOTATOR {
         CLUSTERING()
         ch_versions = ch_versions.mix(CLUSTERING.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(CLUSTERING.out.multiqc)
+        ch_panfam = CLUSTERING.out.panfam
+        ch_all_faa = CLUSTERING.out.all_faa
+        ch_pangenome_families = CLUSTERING.out.pangenome_families
+        ch_corrected_clusters = CLUSTERING.out.corrected_clusters
+        ch_annotation_panfam = CLUSTERING.out.annotation_panfam
+    } else if (run_annotation) {
+        if (!params.clustering_dir || !params.all_faa || !params.pangenome_families) {
+            error "Annotation-only mode requires --clustering_dir, --all_faa, and --pangenome_families."
+        }
+        ch_panfam = Channel.fromPath(params.clustering_dir, checkIfExists: true)
+        ch_annotation_panfam = ch_panfam
+        ch_all_faa = Channel.fromPath(params.all_faa, checkIfExists: true)
+        ch_pangenome_families = Channel.fromPath(params.pangenome_families, checkIfExists: true)
     }
 
     if (run_annotation) {
-        if (!run_clustering) {
-            error "Annotation-only mode needs published PANFAM inputs and is not implemented yet. Run clustering and annotation together for now."
-        }
         VALIDATE_DATABASES()
         ch_database_manifest = VALIDATE_DATABASES.out.manifest
-        ANNOTATION(CLUSTERING.out.panfam, CLUSTERING.out.all_faa, CLUSTERING.out.pangenome_families, ch_database_manifest)
+        ANNOTATION(ch_annotation_panfam, ch_all_faa, ch_pangenome_families, ch_database_manifest)
         ch_versions = ch_versions.mix(ANNOTATION.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(ANNOTATION.out.multiqc)
     }
@@ -62,10 +77,10 @@ workflow PANANNOTATOR {
     ch_multiqc_report = MULTIQC.out.report.map { meta, report -> report }
 
     emit:
-    panfam = CLUSTERING.out.panfam
-    all_faa = CLUSTERING.out.all_faa
-    pangenome_families = CLUSTERING.out.pangenome_families
-    corrected_clusters = CLUSTERING.out.corrected_clusters
+    panfam = ch_panfam
+    all_faa = ch_all_faa
+    pangenome_families = ch_pangenome_families
+    corrected_clusters = ch_corrected_clusters
     annotation_global_parquet = run_annotation ? ANNOTATION.out.global_parquet : channel.empty()
     annotation_pangenome_parquet = run_annotation ? ANNOTATION.out.pangenome_parquet : channel.empty()
     software_versions = ch_software_versions
