@@ -49,16 +49,26 @@ containers for the local Python/reporting utilities, PanGBank fetch step,
 native InterPro HMMER mode, AMRFinder+, and any other local module that
 currently has only a Conda environment.
 
-DeepKOALA uses a dedicated container image plus an external resources directory
-configured by `--deepkoala_resources`. The legacy `--deepkoala_workdir` source
-checkout mode is kept for local development only.
+DeepKOALA uses an external resources directory configured by
+`--deepkoala_resources` and a source checkout configured by
+`--deepkoala_workdir`. On the LABGeM filesystem these default to the shared WP3
+DeepKOALA installation.
 
 When using a Conda-backed profile, the conda installation must be able to write
 to a package cache while creating environments. On clusters where the default
 conda package directories are read-only, set a writable cache before launching:
 
 ```bash
+export NXF_CONDA_CACHEDIR=/path/to/writable/nextflow-conda-envs
 export CONDA_PKGS_DIRS=/path/to/writable/conda-pkgs
+```
+
+When using Singularity or Apptainer-backed profiles, set a persistent image
+cache so containers are not repeatedly pulled into the work directory:
+
+```bash
+export NXF_SINGULARITY_CACHEDIR=/path/to/writable/singularity-cache
+export NXF_APPTAINER_CACHEDIR=/path/to/writable/apptainer-cache
 ```
 
 All DIAMOND clustering steps currently use DIAMOND 2.1.13. This pin is
@@ -67,6 +77,11 @@ DIAMOND 2.2.4 reports that `reassign` has been temporarily removed. Do not
 upgrade DIAMOND for this workflow without retesting `deepclust`, `recluster`,
 and `reassign` together. The DIAMOND modules declare both a Conda environment
 and a BioContainers/Singularity image for this pinned version.
+
+By default, clustering runs `deepclust`, then the error-correction steps
+`recluster` and `reassign`. Set `--run_cluster_correction false` to skip
+`recluster` and `reassign`; in that mode, the initial `deepclust` clusters are
+packaged directly as the final PANFAM clusters.
 
 The workflow runs clustering by default. Add `--run_annotation` to run the
 annotation stage after clustering. The current annotation stage supports
@@ -132,18 +147,42 @@ Raw annotation outputs are gzipped in Nextflow `work/` and are not published by
 default. Add `--keep_raw_annotations true` to publish them under
 `<outdir>/annotation/raw/<tool>/`.
 
-InterPro annotations run in `native` mode by default. This directly runs the
-Pfam and NCBIFAM HMMER searches used by InterProScan 6 and avoids launching a
-nested Nextflow workflow. Native mode supports `--interpro_apps Pfam,NCBIFAM`,
-`--interpro_apps Pfam`, or `--interpro_apps NCBIFAM`.
+Run annotation only from an existing PANFAM clustering result with:
 
-Use `--interpro_mode imported` to run the vendored InterProScan 6 DSL2 workflow
-inside the parent panAnnotator Nextflow graph. This mode can use InterProScan 6
-applications beyond Pfam and NCBIFAM while keeping a single Nextflow controller,
-normal process visibility, and normal `-resume` behavior.
+```bash
+nextflow run . \
+  --run_clustering false \
+  --run_annotation true \
+  --clustering_dir /path/to/clustering \
+  --all_faa /path/to/all_protein_families.faa.gz \
+  --pangenome_families /path/to/pangenome_families.tsv.gz \
+  --annotation_tools interpro,deepkoala,eggnog,amrfinder \
+  --outdir results/GTDB_all_v2.1.0_annotation \
+  -profile slurm,conda
+```
+
+`--clustering_dir` must be the published PANFAM clustering directory containing
+`fasta/PANFAM_80.faa.gz` and `parquet/PANFAM_80.parquet`. The all-protein
+FASTA and pangenome-family mapping are required because some annotation tools
+can run on all proteins and all final parquet outputs need pangenome IDs.
+
+panAnnotator splits FASTA inputs for tools it runs directly. `--annotation_chunk_size`
+controls the number of proteins per chunk for native InterPro, DeepKOALA,
+eggNOG, and AMRFinder+. Imported InterProScan 6 uses its own internal
+`--interproscan6_batch_size` and `--interproscan6_sub_batch_size` settings.
+
+InterPro annotations run in `imported` mode by default with
+`--interpro_apps Pfam,NCBIFAM`. This runs the vendored InterProScan 6 DSL2
+workflow inside the parent panAnnotator Nextflow graph. Imported mode can use
+InterProScan 6 applications beyond Pfam and NCBIFAM while keeping a single
+Nextflow controller, normal process visibility, and normal `-resume` behavior.
 Imported mode writes one annotation parquet per requested InterPro application,
 using a normalized lowercase application name such as `pfam.parquet`,
 `ncbifam.parquet`, or `superfamily.parquet`.
+
+Use `--interpro_mode native` for the lightweight local HMMER implementation of
+Pfam and NCBIFAM. Native mode supports `--interpro_apps Pfam,NCBIFAM`,
+`--interpro_apps Pfam`, or `--interpro_apps NCBIFAM`.
 
 Imported mode is the exception to the Conda-only recommendation: it requires a
 container runtime because the vendored InterProScan app modules are
@@ -152,15 +191,20 @@ slurm,conda_singularity` or `-profile slurm,conda_apptainer`. With `-profile
 local_tools`, imported InterProScan apps run against commands available in the
 active environment and are intended only for development.
 
-DeepKOALA uses the image configured by `--deepkoala_container` and model files
-from `--deepkoala_resources`. The resources directory must contain model-date
-subdirectories such as `202502` or `202603`. Build the default CPU image with:
+DeepKOALA uses source code from `--deepkoala_workdir` and model files from
+`--deepkoala_resources`. By default these point to
+`/env/export/labgem_bank/WP3/deepkoala` and
+`/env/export/labgem_bank/WP3/deepkoala/resources`. The resources directory must
+contain model-date subdirectories such as `202502` or `202603`.
+
+The container path is configured by `--deepkoala_container`, but it requires an
+accessible image. Build the default CPU image with:
 
 ```bash
 docker build -t ghcr.io/labgem/deepkoala:0.1-beta modules/local/deepkoala
 ```
 
-For local development without a container, `--deepkoala_workdir` can point to a
+For local development, override `--deepkoala_workdir` to point to another
 DeepKOALA source checkout.
 
 eggNOGMapper uses the shared database paths configured with
@@ -168,8 +212,9 @@ eggNOGMapper uses the shared database paths configured with
 want to reuse completed eggNOGMapper process results from the same work
 directory.
 
-AMRFinder+ can use the database configured in its installation. To pin a
-specific database directory for reproducibility, set `--amrfinder_db`.
+AMRFinder+ uses the database configured by `--amrfinder_db`. On the LABGeM
+filesystem this defaults to `/env/export/labgem_bank/WP3/amrfinder`, which may
+be a database root containing a `latest` symlink.
 
 Before annotation starts, panAnnotator validates the database paths required by
 the requested tools and writes `<outdir>/pipeline_info/database_manifest.yml`.

@@ -16,15 +16,22 @@ panAnnotator publishes final deliverables under stage-specific directories:
 ```text
 inputs/
 ├── all_protein_families.faa.gz
-├── collection_release_id.txt
-├── pangenome_families.tsv
+├── pangenome_families.tsv.gz
+├── metadata/
+│   ├── collection_metadata.yml
+│   └── pangenome_api_ids.tsv
 └── annotation/
-    ├── panfam_80.faa.gz
-    └── all_proteins.faa.gz
+    └── panfam_80.faa.gz
 ```
 
 `inputs/annotation/` is only populated when annotation is enabled. It records
-the FASTA view used by annotation tools.
+the PANFAM representative FASTA view used by annotation tools. All-protein
+annotation reuses `inputs/all_protein_families.faa.gz` and is not published a
+second time.
+
+`inputs/metadata/` contains provenance for the selected PanGBank collection,
+API release ID, local mirror path, and the local pangenome directory name to
+PanGBank integer ID map.
 
 ## Clustering
 
@@ -90,6 +97,8 @@ annotation/parquet/
     └── pangenomes/
         └── <annotation_type>_p<pangenome_id>.parquet
 ```
+
+`annotation/annotation_report.txt` is a compact per-tool annotation summary.
 
 InterPro application, DeepKOALA/KOfam, and AMRFinder+ parquet files contain
 `Pangenome_id`, `Pangenome_family_id`, and `Annotation_id`. InterPro imported

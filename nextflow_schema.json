@@ -48,6 +48,21 @@
                     "description": "Full PanGBank collection name to process.",
                     "fa_icon": "fas fa-layer-group"
                 },
+                "clustering_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Existing PANFAM clustering directory used for annotation-only mode. Must contain fasta/PANFAM_80.faa.gz and parquet/PANFAM_80.parquet."
+                },
+                "all_faa": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Existing all_protein_families FASTA file used for annotation-only mode, typically inputs/all_protein_families.faa.gz."
+                },
+                "pangenome_families": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Existing pangenome-family mapping used for annotation-only mode, typically inputs/pangenome_families.tsv.gz."
+                },
                 "test_data": {
                     "type": "string",
                     "format": "file-path",
@@ -294,6 +309,11 @@
                     "default": "200G",
                     "description": "Memory passed to DIAMOND commands."
                 },
+                "run_cluster_correction": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run DIAMOND recluster and reassign after deepclust. If false, initial deepclust clusters are packaged directly."
+                },
                 "compression": {
                     "type": "string",
                     "default": "zstd",
@@ -330,7 +350,7 @@
                 "annotation_chunk_size": {
                     "type": "integer",
                     "default": 80000,
-                    "description": "Number of protein records per FASTA chunk for chunked annotation tools."
+                    "description": "Number of protein records per FASTA chunk for panAnnotator-run annotation tools such as native InterPro, DeepKOALA, eggNOG, and AMRFinder+."
                 },
                 "interpro_apps": {
                     "type": "string",
@@ -339,19 +359,19 @@
                 },
                 "interpro_mode": {
                     "type": "string",
-                    "default": "native",
+                    "default": "imported",
                     "enum": ["native", "imported"],
-                    "description": "InterPro annotation implementation. native runs Pfam/NCBIFAM HMMER modules directly; imported runs the vendored InterProScan 6 DSL2 workflow in the parent Nextflow graph."
+                    "description": "InterPro annotation implementation. imported runs the vendored InterProScan 6 DSL2 workflow in the parent Nextflow graph; native runs Pfam/NCBIFAM HMMER modules directly."
                 },
                 "interpro_pfam_version": {
                     "type": "string",
-                    "default": "38.1",
+                    "default": "38.2",
                     "description": "Pfam data version under --interproscan6_datadir used by native InterPro mode.",
                     "hidden": true
                 },
                 "interpro_ncbifam_version": {
                     "type": "string",
-                    "default": "18.0",
+                    "default": "19.0",
                     "description": "NCBIFAM data version under --interproscan6_datadir used by native InterPro mode.",
                     "hidden": true
                 },
@@ -362,7 +382,7 @@
                 },
                 "interproscan6_interpro_version": {
                     "type": "string",
-                    "default": "108.0",
+                    "default": "109.0",
                     "description": "InterPro data release to use from --interproscan6_datadir."
                 },
                 "interproscan6_datadir": {
@@ -409,7 +429,8 @@
                 "deepkoala_workdir": {
                     "type": "string",
                     "format": "directory-path",
-                    "description": "Legacy DeepKOALA source checkout directory. Used only when --deepkoala_resources is not provided.",
+                    "default": "/env/export/labgem_bank/WP3/deepkoala",
+                    "description": "DeepKOALA source checkout directory added to PYTHONPATH for Conda-backed execution.",
                     "hidden": true
                 },
                 "deepkoala_cli_module": {
@@ -487,7 +508,8 @@
                 "amrfinder_db": {
                     "type": "string",
                     "format": "directory-path",
-                    "description": "Optional AMRFinder+ database directory. If unset, AMRFinder+ uses the database configured in its own installation.",
+                    "default": "/env/export/labgem_bank/WP3/amrfinder",
+                    "description": "AMRFinder+ database directory. May point to a database root containing a latest symlink.",
                     "hidden": true
                 },
                 "db_root": {
@@ -511,6 +533,24 @@
                 "db_manifest": {
                     "type": "string",
                     "description": "Optional database manifest sourced by local annotation modules.",
+                    "hidden": true
+                },
+                "conda_cache_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory used by Nextflow to cache Conda environments. Defaults to NXF_CONDA_CACHEDIR when set.",
+                    "hidden": true
+                },
+                "singularity_cache_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory used by Nextflow to cache Singularity images. Defaults to NXF_SINGULARITY_CACHEDIR when set.",
+                    "hidden": true
+                },
+                "apptainer_cache_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory used by Nextflow to cache Apptainer images. Defaults to NXF_APPTAINER_CACHEDIR or NXF_SINGULARITY_CACHEDIR when set.",
                     "hidden": true
                 }
             }
