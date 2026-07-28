@@ -15,17 +15,21 @@ import pandas as pd
 
 
 TOOL_LABELS = {
+    "cath_gene3d": "CATH-Gene3D",
     "pfam": "Pfam",
     "ncbifam": "NCBIfam",
+    "superfamily": "SUPERFAMILY",
     "deepkoala": "DeepKOALA",
-    "eggnog": "eggNOG root OGs",
+    "eggnog": "EggNOG",
     "amrfinder": "AMRFinder+",
 }
 TOOL_COLORS = {
+    "cath_gene3d": "#F58518",
     "pfam": "#5B7FB2",
     "ncbifam": "#6DA36F",
+    "superfamily": "#4C9A4A",
     "deepkoala": "#C77C59",
-    "eggnog": "#8A6BBE",
+    "eggnog": "#E45756",
     "amrfinder": "#C45C5C",
 }
 
@@ -57,7 +61,7 @@ def configure_matplotlib():
             "savefig.pad_inches": 0.04,
             "font.family": "DejaVu Sans",
             "font.size": 8.5,
-            "axes.titlesize": 9.5,
+            "axes.titlesize": 9,
             "axes.labelsize": 9,
             "xtick.labelsize": 8,
             "ytick.labelsize": 8,
@@ -96,8 +100,12 @@ def normalize_eggnog_terms(value: object) -> list[str]:
         term = term.strip()
         if not term:
             continue
-        # Use the root OG to match the previous OG_root_only reports.
-        out.append(term.split("@", 1)[0])
+        if "@" not in term:
+            continue
+        term_id, taxon = term.split("@", 1)
+        # Match the previous OG_root_only reports: keep only root-level eggNOG OGs.
+        if taxon == "1|root":
+            out.append(term_id)
     return out
 
 
@@ -279,22 +287,23 @@ def plot_coverage(df: pd.DataFrame, out_path: Path) -> None:
 
 def plot_count_distribution(df: pd.DataFrame, out_path: Path) -> None:
     plt, _ticker = configure_matplotlib()
-    fig, ax = plt.subplots(figsize=(7.5, 4.6))
+    fig, ax = plt.subplots(figsize=(9.8, 4.8))
     for tool, sub in df.groupby("tool", sort=False):
         sub = sub.sort_values("n_annotations")
-        ax.step(
+        ax.plot(
             sub["n_annotations"],
             sub["protein_count"],
-            where="mid",
-            linewidth=2,
+            marker="o",
+            markersize=3,
+            linewidth=1.8,
             color=TOOL_COLORS.get(tool, "#777777"),
             label=TOOL_LABELS.get(tool, tool),
         )
-    ax.set_xlabel("Annotations per protein")
-    ax.set_ylabel("Number of proteins")
-    ax.set_title("Annotation count distribution")
+    ax.set_xlabel("Terms per protein")
+    ax.set_ylabel("Protein count")
+    ax.set_title("Annotation terms per annotated protein")
     ax.set_yscale("log")
-    ax.legend(frameon=False, loc="upper right")
+    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.02, 0.5), borderaxespad=0)
     clean_axes(ax)
     fig.tight_layout()
     fig.savefig(out_path)
@@ -359,24 +368,38 @@ def plot_top_terms(df: pd.DataFrame, out_path: Path) -> None:
 
 def plot_heatmap(df: pd.DataFrame, out_path: Path) -> None:
     plt, ticker = configure_matplotlib()
-    tools = list(df["tool"].drop_duplicates())
+    preferred = [
+        "pfam",
+        "cath_gene3d",
+        "superfamily",
+        "ncbifam",
+        "eggnog",
+        "deepkoala",
+        "amrfinder",
+    ]
+    present = list(df["tool"].drop_duplicates())
+    tools = [tool for tool in preferred if tool in present] + [tool for tool in present if tool not in preferred]
     matrix = (
         df.pivot(index="tool", columns="other_tool", values="fraction_all_proteins")
         .reindex(index=tools, columns=tools)
         .fillna(0)
     )
-    fig, ax = plt.subplots(figsize=(6.0, 5.2))
+    fig, ax = plt.subplots(figsize=(7.2, 5.8))
     im = ax.imshow(matrix.values, cmap="YlGnBu", vmin=0, vmax=max(float(matrix.values.max()), 0.01))
     ax.set_xticks(range(len(tools)))
     ax.set_yticks(range(len(tools)))
     ax.set_xticklabels([TOOL_LABELS.get(tool, tool) for tool in tools], rotation=35, ha="right")
     ax.set_yticklabels([TOOL_LABELS.get(tool, tool) for tool in tools])
-    ax.set_title("Tool co-coverage")
+    ax.set_title("Protein co-coverage across annotation resources")
     for i in range(len(tools)):
         for j in range(len(tools)):
-            ax.text(j, i, f"{matrix.iloc[i, j]:.1%}", ha="center", va="center", fontsize=7, color="#111111")
+            value = float(matrix.iloc[i, j])
+            color = "white" if value >= 0.38 else "#222222"
+            ax.text(j, i, f"{value:.0%}", ha="center", va="center", fontsize=8, color=color)
     cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.ax.yaxis.set_major_formatter(ticker.PercentFormatter(1.0))
+    cbar.set_label("Fraction of all proteins")
+    ax.grid(False)
     fig.tight_layout()
     fig.savefig(out_path)
     plt.close(fig)

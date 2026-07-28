@@ -194,9 +194,11 @@ def read_amrfinder(paths: list[Path]) -> pd.DataFrame:
     for path in paths:
         with open_text(path) as handle:
             reader = csv.DictReader(handle, delimiter="\t")
+            if "Element symbol" not in (reader.fieldnames or []):
+                raise ValueError(f"{path} missing required AMRFinder column: Element symbol")
             for row in reader:
                 query = row.get("Protein identifier") or row.get("Protein id") or row.get("protein_id") or row.get("Name")
-                annot = row.get("Element symbol") or row.get("Gene symbol") or row.get("Element name") or row.get("HMM id")
+                annot = row.get("Element symbol")
                 start = row.get("Start") or row.get("Protein start") or row.get("start")
                 stop = row.get("Stop") or row.get("End") or row.get("Protein stop") or row.get("end")
                 rows.append(

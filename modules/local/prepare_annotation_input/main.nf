@@ -2,12 +2,7 @@ process PREPARE_ANNOTATION_INPUT {
     tag "$annotation_input_mode"
     label "process_low"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
-    publishDir "${params.outdir}/inputs/annotation", mode: "copy", saveAs: { filename ->
-        if (filename.startsWith("versions_") || filename == "all_proteins.faa.gz") {
-            return null
-        }
-        return filename
-    }
+    publishDir enabled: false
 
     input:
     path panfam_dir
