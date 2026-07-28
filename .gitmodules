@@ -1,4 +1,4 @@
 [submodule "subworkflows/interproscan6"]
 	path = subworkflows/interproscan6
-	url = https://github.com/yazid-hoblos/interproscan6.git
-	branch = pangbank_annotator
+	url = https://github.com/ebi-pf-team/interproscan6.git
+	branch = main
