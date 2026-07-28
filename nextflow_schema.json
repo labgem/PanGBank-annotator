@@ -48,21 +48,6 @@
                     "description": "Full PanGBank collection name to process.",
                     "fa_icon": "fas fa-layer-group"
                 },
-                "clustering_dir": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Existing PANFAM clustering directory used for annotation-only mode. Must contain fasta/PANFAM_80.faa.gz and parquet/PANFAM_80.parquet."
-                },
-                "all_faa": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "Existing all_protein_families FASTA file used for annotation-only mode, typically inputs/all_protein_families.faa.gz."
-                },
-                "pangenome_families": {
-                    "type": "string",
-                    "format": "file-path",
-                    "description": "Existing pangenome-family mapping used for annotation-only mode, typically inputs/pangenome_families.tsv.gz."
-                },
                 "test_data": {
                     "type": "string",
                     "format": "file-path",

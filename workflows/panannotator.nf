@@ -48,13 +48,20 @@ workflow PANANNOTATOR {
         ch_corrected_clusters = CLUSTERING.out.corrected_clusters
         ch_annotation_panfam = CLUSTERING.out.annotation_panfam
     } else if (run_annotation) {
-        if (!params.clustering_dir || !params.all_faa || !params.pangenome_families) {
-            error "Annotation-only mode requires --clustering_dir, --all_faa, and --pangenome_families."
+        if (!params.outdir) {
+            error "Annotation-only mode requires --outdir pointing to an existing panAnnotator result."
         }
-        ch_panfam = Channel.fromPath(params.clustering_dir, checkIfExists: true)
+        clustering_dir = "${params.outdir}/clustering"
+        all_faa = "${params.outdir}/inputs/all_protein_families.faa.gz"
+        pangenome_families = "${params.outdir}/inputs/pangenome_families.tsv.gz"
+
+        ch_panfam = Channel.fromPath(clustering_dir, checkIfExists: true)
         ch_annotation_panfam = ch_panfam
-        ch_all_faa = Channel.fromPath(params.all_faa, checkIfExists: true)
-        ch_pangenome_families = Channel.fromPath(params.pangenome_families, checkIfExists: true)
+        ch_all_faa = Channel.fromPath(all_faa, checkIfExists: true)
+        ch_pangenome_families = Channel.fromPath(pangenome_families, checkIfExists: true)
+        ch_multiqc_files = ch_multiqc_files.mix(
+            Channel.fromPath("${params.outdir}/report/clustering/custom_content/*_mqc.yaml", checkIfExists: false)
+        )
     }
 
     if (run_annotation) {
