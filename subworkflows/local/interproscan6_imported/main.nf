@@ -35,12 +35,14 @@ workflow INTERPROSCAN6_IMPORTED {
         .map { meta, fasta -> tuple(meta, fasta) }
         .set { ch_input }
 
+    def imported_outprefix = "${workflow.workDir}/panfam80.interproscan6"
+
     INTERPROSCAN(
         ch_input.map { meta, fasta -> fasta },
         apps,
         apps_config,
         file(params.interproscan6_datadir),
-        file("panfam80.interproscan6"),
+        imported_outprefix,
         ["tsv"],
         params.interproscan6_interpro_version,
         params.interproscan6_version,
