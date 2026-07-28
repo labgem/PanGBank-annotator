@@ -7,6 +7,7 @@ import argparse
 import base64
 import gzip
 import html
+import math
 import os
 import statistics
 import tempfile
@@ -322,6 +323,18 @@ def percent_label(value: float) -> str:
     return f"{100 * value:.1f}%"
 
 
+def sci_tick_label(value: float) -> str:
+    if value <= 0:
+        return "0"
+    exponent = int(math.floor(math.log10(value)))
+    coefficient = value / (10**exponent)
+    if abs(coefficient - round(coefficient)) < 1e-8:
+        coefficient_text = str(int(round(coefficient)))
+    else:
+        coefficient_text = f"{coefficient:.1f}".rstrip("0").rstrip(".")
+    return rf"${coefficient_text} \times 10^{exponent}$"
+
+
 def short_number(value: float) -> str:
     abs_value = abs(value)
     if abs_value >= 1_000_000:
@@ -627,9 +640,13 @@ def plot_cluster_reduction_summary(summary: pd.DataFrame, out_path: Path) -> Non
     axes[0].set_xticks(x)
     axes[0].set_xticklabels(labels, rotation=28, ha="right")
     axes[0].set_yscale("log")
-    axes[0].yaxis.set_major_formatter(ticker.StrMethodFormatter("{x:,.0f}"))
-    axes[0].legend(frameon=False, loc="upper left")
+    y_max = max(float(value) for value in summary["clusters"])
+    y_ticks = [tick for tick in [1e7, 2e7, 6e7] if tick <= y_max * 1.12]
+    axes[0].set_yticks(y_ticks)
+    axes[0].set_yticklabels([sci_tick_label(tick) for tick in y_ticks])
+    axes[0].legend(frameon=False, loc="upper right")
     clean_axes(axes[0])
+    axes[0].grid(False)
 
     after = summary[summary["section"] == "after_ec"].set_index("cluster_level").reindex(levels)
     values = (1 - (after["clusters"] / after["members"])).tolist()
@@ -646,6 +663,7 @@ def plot_cluster_reduction_summary(summary: pd.DataFrame, out_path: Path) -> Non
     axes[1].yaxis.set_major_formatter(ticker.PercentFormatter(1.0, decimals=0))
     axes[1].tick_params(axis="x", rotation=28)
     clean_axes(axes[1])
+    axes[1].grid(False)
     y0, y1 = axes[1].get_ylim()
     offset = 0.015 * (y1 - y0)
     for bar, value in zip(bars, values):
@@ -882,7 +900,15 @@ def main() -> None:
         if not corrected.exists():
             raise FileNotFoundError(f"Corrected cluster table not found: {corrected}")
         after[level] = read_clusters(corrected)
-        before[level] = read_clusters(raw) if raw.exists() else after[level]
+        if not args.skip_report:
+            if raw.exists():
+                before[level] = read_clusters(raw)
+            elif raw == corrected:
+                before[level] = after[level]
+            else:
+                raise FileNotFoundError(
+                    f"Raw cluster table required for before/after correction report not found: {raw}"
+                )
         annotated, sizes = assign_cluster_ids(after[level], level, args.collection_release_id)
         packaged[level] = annotated
         write_representative_fasta(args.all_faa_gz, sizes, args.out_dir / "fasta" / f"PANFAM_{level}.faa.gz")
