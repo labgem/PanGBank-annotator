@@ -25,6 +25,8 @@ The current implementation contains:
 4. Package PANFAM parquet files, representative FASTA files, and a report file.
 5. Optionally annotate PANFAM representatives with InterProScan 6, DeepKOALA, eggNOGMapper, and AMRFinder+.
 
+![panAnnotator workflow overview](docs/images/workflow.png)
+
 DIAMOND is currently pinned to 2.1.13 for all clustering steps. Newer tested
 versions are not suitable for this workflow yet: 2.1.24 fails during
 `reassign`, and 2.2.4 temporarily removed `reassign`. The DIAMOND modules
@@ -45,11 +47,18 @@ nextflow run panAnnotator \
    --outdir <OUTDIR>
 ```
 
-Use `conda` or `mamba` as the primary software profile. `singularity` and
-`apptainer` are kept for containerized modes such as imported InterProScan 6 and for future full-container support.
-Use `conda_singularity` or `conda_apptainer` as temporary bridge profiles when
-you need Conda-managed panAnnotator modules with imported InterProScan 6
-containerized app modules.
+Use `conda` or `mamba` as the primary software profile. Add `singularity` or
+`apptainer` when running imported InterProScan 6, for example
+`-profile slurm,conda,singularity`.
+
+Imported InterProScan 6 is tracked as an upstream Git submodule. Until the
+upstream `sequences.db` staging fix is released, initialize the submodule and
+apply the local temporary patch before running imported InterProScan:
+
+```bash
+git submodule update --init --recursive
+bin/apply_interproscan6_patches.sh
+```
 
 DeepKOALA is run from a dedicated container image and external model resources.
 Build the default image from `modules/local/deepkoala/Dockerfile` and provide

@@ -24,12 +24,9 @@ developer tests where the active environment is known.
 
 For production or shared runs, use `conda` or `mamba` as the primary software
 profile. The local panAnnotator modules all declare Conda environments, so this
-is the supported standalone mode for full default runs. `singularity` and
-`apptainer` are kept as container-only profiles, but they should be considered
-experimental until every local panAnnotator utility module has a container.
-Use `conda_singularity` or `conda_apptainer` only as a temporary bridge when
-you need Conda-managed panAnnotator steps together with imported InterProScan 6
-containerized app modules.
+is the supported standalone mode for full default runs. Add `singularity` or
+`apptainer` when you run imported InterProScan 6, whose app modules are
+containerized.
 
 Runtime profile summary:
 
@@ -37,17 +34,15 @@ Runtime profile summary:
 | --- | --- |
 | `slurm` | Submit processes to Slurm. Combine with a software profile. |
 | `conda` / `mamba` | Primary supported software profile. Use only Conda environments. |
-| `conda_singularity` | Temporary mixed profile: Conda for panAnnotator modules, Singularity for imported InterProScan app modules. |
-| `conda_apptainer` | Temporary mixed profile: Conda for panAnnotator modules, Apptainer for imported InterProScan app modules. |
-| `singularity` | Container-only profile. No Conda environments are created. Experimental for full panAnnotator runs. |
-| `apptainer` | Container-only profile. No Conda environments are created. Experimental for full panAnnotator runs. |
+| `conda,singularity` | Conda for panAnnotator modules, Singularity for imported InterProScan app modules. |
+| `conda,apptainer` | Conda for panAnnotator modules, Apptainer for imported InterProScan app modules. |
+| `singularity` | Container profile. Use with `conda` for imported InterProScan 6 runs unless every requested module has a container. |
+| `apptainer` | Container profile. Use with `conda` for imported InterProScan 6 runs unless every requested module has a container. |
 | `local_tools` | Developer/debug mode; no software is managed by Nextflow. |
 
-Future development should replace the temporary mixed profiles with full
-container support for all panAnnotator modules. That requires adding and testing
-containers for the local Python/reporting utilities, PanGBank fetch step,
-native InterPro HMMER mode, AMRFinder+, and any other local module that
-currently has only a Conda environment.
+Future development should add and test full-container support for all local
+panAnnotator modules. Until then, `conda,singularity` is the recommended
+profile combination for runs that include imported InterProScan 6.
 
 DeepKOALA uses an external resources directory configured by
 `--deepkoala_resources` and a source checkout configured by
@@ -135,7 +130,7 @@ nextflow run . \
   --run_annotation \
   --annotation_tools interpro,deepkoala,eggnog,amrfinder \
   --outdir results/GTDB_all_v2.0.0 \
-  -profile slurm,conda
+  -profile slurm,conda,singularity
 ```
 
 By default, annotation input is `clustering/fasta/PANFAM_80.faa.gz`. Tools listed in
@@ -153,18 +148,14 @@ Run annotation only from an existing PANFAM clustering result with:
 nextflow run . \
   --run_clustering false \
   --run_annotation true \
-  --clustering_dir /path/to/clustering \
-  --all_faa /path/to/all_protein_families.faa.gz \
-  --pangenome_families /path/to/pangenome_families.tsv.gz \
   --annotation_tools interpro,deepkoala,eggnog,amrfinder \
-  --outdir results/GTDB_all_v2.1.0_annotation \
-  -profile slurm,conda
+  --outdir results/GTDB_all_v2.1.0 \
+  -profile slurm,conda,singularity
 ```
 
-`--clustering_dir` must be the published PANFAM clustering directory containing
-`fasta/PANFAM_80.faa.gz` and `parquet/PANFAM_80.parquet`. The all-protein
-FASTA and pangenome-family mapping are required because some annotation tools
-can run on all proteins and all final parquet outputs need pangenome IDs.
+In annotation-only mode, `--outdir` must point to an existing panAnnotator
+result directory. The workflow reads clustering results from `<outdir>/clustering`
+and input metadata from `<outdir>/inputs`.
 
 panAnnotator splits FASTA inputs for tools it runs directly. `--annotation_chunk_size`
 controls the number of proteins per chunk for native InterPro, DeepKOALA,
@@ -186,10 +177,46 @@ Pfam and NCBIFAM. Native mode supports `--interpro_apps Pfam,NCBIFAM`,
 
 Imported mode is the exception to the Conda-only recommendation: it requires a
 container runtime because the vendored InterProScan app modules are
-containerized. For current HPC use, run it with `-profile
-slurm,conda_singularity` or `-profile slurm,conda_apptainer`. With `-profile
-local_tools`, imported InterProScan apps run against commands available in the
-active environment and are intended only for development.
+containerized. For current HPC use, run it with `-profile slurm,conda,singularity`
+or `-profile slurm,conda,apptainer`. With `-profile local_tools`, imported
+InterProScan apps run against commands available in the active environment and
+are intended only for development.
+
+### InterProScan 6 Submodule And Temporary Patch
+
+panAnnotator tracks upstream InterProScan 6 as a Git submodule under
+`subworkflows/interproscan6`. Imported InterProScan is run from inside the
+parent panAnnotator workflow, so panAnnotator provides a small compatibility
+layer:
+
+- `lib` is a symlink to `subworkflows/interproscan6/lib`, allowing Groovy
+  classes imported by InterProScan modules to resolve from the parent
+  `projectDir`.
+- selected InterProScan helper scripts are exposed in `bin/` as symlinks,
+  because Nextflow adds the parent workflow `bin/` to task `PATH`.
+- imported InterProScan container tasks bind-mount
+  `subworkflows/interproscan6/bin`, so those symlink targets remain visible
+  inside Singularity/Apptainer containers.
+
+Until the upstream `sequences.db` staging/output issue is fixed in an
+InterProScan release, panAnnotator also carries a local patch:
+
+```text
+patches/interproscan6/0001-imported-workflow-localize-sequences-db.patch
+```
+
+Apply it after checking out or updating submodules:
+
+```bash
+git submodule update --init --recursive
+bin/apply_interproscan6_patches.sh
+```
+
+The patch modifies only InterProScan `SPLIT_FASTA` and `WRITE_TSV` so SQLite
+reads use node-local temporary storage before outputs are moved back to the
+Nextflow work directory. The parent panAnnotator repository should commit the
+upstream submodule pointer and the patch file, but not a forked InterProScan
+commit for these temporary changes.
 
 DeepKOALA uses source code from `--deepkoala_workdir` and model files from
 `--deepkoala_resources`. By default these point to

@@ -17,17 +17,13 @@ panAnnotator publishes final deliverables under stage-specific directories:
 inputs/
 ├── all_protein_families.faa.gz
 ├── pangenome_families.tsv.gz
-├── metadata/
-│   ├── collection_metadata.yml
-│   └── pangenome_api_ids.tsv
-└── annotation/
-    └── panfam_80.faa.gz
+└── metadata/
+    ├── collection_metadata.yml
+    └── pangenome_api_ids.tsv
 ```
 
-`inputs/annotation/` is only populated when annotation is enabled. It records
-the PANFAM representative FASTA view used by annotation tools. All-protein
-annotation reuses `inputs/all_protein_families.faa.gz` and is not published a
-second time.
+Annotation tools use `clustering/fasta/PANFAM_80.faa.gz` by default. Tools
+listed in `--all_protein_tools` use `inputs/all_protein_families.faa.gz`.
 
 `inputs/metadata/` contains provenance for the selected PanGBank collection,
 API release ID, local mirror path, and the local pangenome directory name to
