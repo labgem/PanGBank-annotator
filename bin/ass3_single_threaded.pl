@@ -1,0 +1,1 @@
+../subworkflows/interproscan6/bin/ass3_single_threaded.pl

@@ -1,0 +1,1 @@
+../subworkflows/interproscan6/bin/add-xrefs.groovy

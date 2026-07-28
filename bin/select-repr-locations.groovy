@@ -1,0 +1,1 @@
+../subworkflows/interproscan6/bin/select-repr-locations.groovy
