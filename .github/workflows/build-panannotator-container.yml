@@ -1,0 +1,72 @@
+name: Build PanGBank-annotator containers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "containers/panannotator/Dockerfile"
+      - "containers/deepkoala/Dockerfile"
+      - "modules/local/envs/**/environment.yml"
+      - ".github/workflows/build-panannotator-container.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "containers/panannotator/Dockerfile"
+      - "containers/deepkoala/Dockerfile"
+      - "modules/local/envs/**/environment.yml"
+      - ".github/workflows/build-panannotator-container.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ghcr.io/labgem/pangbank-annotator
+            dockerfile: containers/panannotator/Dockerfile
+          - image: ghcr.io/labgem/deepkoala
+            dockerfile: containers/deepkoala/Dockerfile
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,prefix=sha-
+
+      - name: Build and optionally push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

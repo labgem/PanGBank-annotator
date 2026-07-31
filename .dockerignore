@@ -1,0 +1,6 @@
+*
+!modules/
+!modules/local/
+!modules/local/envs/
+!modules/local/envs/*/
+!modules/local/envs/*/environment.yml

@@ -11,6 +11,7 @@ dependencies:
   - conda-forge::matplotlib-base
   - conda-forge::numpy
   - conda-forge::pandas
+  - conda-forge::procps-ng
   - conda-forge::pyarrow
   - conda-forge::python=3.11
   - conda-forge::zstandard

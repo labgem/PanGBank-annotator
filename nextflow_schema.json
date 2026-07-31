@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/labgem/PanGBank-annotator/main/nextflow_schema.json",
+    "$id": "https://raw.githubusercontent.com/LABGeM/PanGBank-annotator/main/nextflow_schema.json",
     "title": "LABGeM/PanGBank-annotator pipeline parameters",
     "description": "PANFAM clustering and annotation workflow for PanGBank pangenome family representatives",
     "type": "object",
@@ -404,6 +404,30 @@
                     "description": "CPU threads used by dynamic imported InterProScan 6 application tasks.",
                     "hidden": true
                 },
+                "panannotator_container": {
+                    "type": "string",
+                    "default": "ghcr.io/labgem/pangbank-annotator:dev",
+                    "description": "Container image used for PanGBank-annotator local Python and shell helper modules.",
+                    "hidden": true
+                },
+                "amrfinder_container": {
+                    "type": "string",
+                    "default": "ncbi/amr:4.2.7-2026-05-15.1",
+                    "description": "Container image used for AMRFinder+ modules.",
+                    "hidden": true
+                },
+                "hmmer_container": {
+                    "type": "string",
+                    "default": "interpro/hmmer:3.3",
+                    "description": "Container image used for native HMMER-based InterPro modules.",
+                    "hidden": true
+                },
+                "database_setup_container": {
+                    "type": "string",
+                    "default": "ghcr.io/labgem/pangbank-annotator:dev",
+                    "description": "Container image used for annotation database validation and preparation.",
+                    "hidden": true
+                },
                 "deepkoala_resources": {
                     "type": "string",
                     "format": "directory-path",
@@ -412,10 +436,10 @@
                     "hidden": true
                 },
                 "deepkoala_workdir": {
-                    "type": "string",
+                    "type": ["string", "null"],
                     "format": "directory-path",
-                    "default": "/env/export/labgem_bank/WP3/deepkoala",
-                    "description": "DeepKOALA source checkout directory added to PYTHONPATH for Conda-backed execution.",
+                    "default": null,
+                    "description": "Optional DeepKOALA source checkout directory added to PYTHONPATH for development overrides. Leave unset to use the installed/container DeepKOALA package.",
                     "hidden": true
                 },
                 "deepkoala_cli_module": {
@@ -426,8 +450,8 @@
                 },
                 "deepkoala_container": {
                     "type": "string",
-                    "default": "ghcr.io/labgem/deepkoala:0.1-beta",
-                    "description": "Container image containing the DeepKOALA Python package.",
+                    "default": "ghcr.io/labgem/deepkoala:dev",
+                    "description": "Container image containing the DeepKOALA package and runtime dependencies.",
                     "hidden": true
                 },
                 "deepkoala_model": {
@@ -468,8 +492,8 @@
                 },
                 "deepkoala_use_gpu": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Allow DeepKOALA to use GPU.",
+                    "default": false,
+                    "description": "Allow DeepKOALA to use GPU when the gpu profile is also enabled.",
                     "hidden": true
                 },
                 "eggnog_data_dir": {
@@ -513,6 +537,18 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Skip annotation database path validation before running annotation.",
+                    "hidden": true
+                },
+                "container_mounts": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "Comma-separated extra host paths explicitly bind-mounted for Singularity/Apptainer runs. Annotation database paths are normally passed as explicit process inputs.",
+                    "hidden": true
+                },
+                "container_pull_timeout": {
+                    "type": "string",
+                    "default": "2 h",
+                    "description": "Maximum time allowed for Singularity/Apptainer image pull and Docker-to-SIF conversion.",
                     "hidden": true
                 },
                 "db_manifest": {

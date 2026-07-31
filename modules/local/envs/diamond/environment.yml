@@ -7,3 +7,4 @@ dependencies:
   - bioconda::diamond=2.1.13
   - conda-forge::bash
   - conda-forge::gzip
+  - conda-forge::procps-ng

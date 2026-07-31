@@ -5,6 +5,7 @@ channels:
   - nodefaults
 dependencies:
   - conda-forge::python=3.11
+  - conda-forge::procps-ng
   - bioconda::eggnog-mapper=2.1.13
   - bioconda::hmmer
   - bioconda::ncbi-amrfinderplus

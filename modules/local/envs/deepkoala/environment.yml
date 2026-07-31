@@ -6,7 +6,12 @@ dependencies:
   - conda-forge::python=3.11
   - conda-forge::bash
   - conda-forge::gzip
+  - conda-forge::git
   - conda-forge::numpy=1.26.3
   - conda-forge::pandas=2.2.2
+  - conda-forge::pip
+  - conda-forge::procps-ng
   - conda-forge::tqdm=4.66.4
   - conda-forge::pytorch=2.4.1
+  - pip:
+      - git+https://github.com/zhaoxi120/deepkoala.git@bebbe0c43f50a26488f7092f6b355aae870a4ed9

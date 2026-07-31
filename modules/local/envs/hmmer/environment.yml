@@ -6,4 +6,5 @@ channels:
 dependencies:
   - bioconda::hmmer
   - conda-forge::bash
+  - conda-forge::procps-ng
   - conda-forge::python=3.11

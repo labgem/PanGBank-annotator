@@ -5,3 +5,4 @@ channels:
   - nodefaults
 dependencies:
   - bioconda::ncbi-amrfinderplus
+  - conda-forge::procps-ng
