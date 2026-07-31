@@ -4,13 +4,13 @@
 
 Use one executor profile and one software profile.
 
-| Profile                     | Purpose                                                                                             |
-| --------------------------- | --------------------------------------------------------------------------------------------------- |
-| `slurm`                     | Submit processes to Slurm.                                                                          |
-| `conda`                     | Conda software profile for development and tools with conda support.                                |
+| Profile                     | Purpose                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `slurm`                     | Submit processes to Slurm.                                                                                                |
+| `conda`                     | Conda software profile for development and tools with conda support.                                                      |
 | `singularity` / `apptainer` | Recommended production software profile. Required for imported InterProScan 6 unless using `local_tools` for development. |
-| `local_tools`               | Developer/debug mode. Uses tools already available in the active shell environment.                 |
-| `test`                      | Built-in small FASTA dataset for smoke tests; supports custom input FAA data.                       |
+| `local_tools`               | Developer/debug mode. Uses tools already available in the active shell environment.                                       |
+| `test`                      | Built-in small FASTA dataset for smoke tests; supports custom input FAA data.                                             |
 
 Recommended production profiles:
 
@@ -182,9 +182,8 @@ Before annotation starts, PanGBank-annotator validates the database paths
 required by the requested tools and writes
 `<outdir>/pipeline_info/database_manifest.yml`.
 
-Use `--prepare_databases true --db_root /path/to/db_root` to download or update databases for the requested annotation tools before validation. 
+Use `--prepare_databases true --db_root /path/to/db_root` to download or update databases for the requested annotation tools before validation.
 See [Annotation Databases](databases.md) for the expected database layout, tool-specific paths, and validation behavior.
-
 
 ## Main Parameters Table
 
@@ -219,13 +218,13 @@ See [Annotation Databases](databases.md) for the expected database layout, tool-
 The local PanGBank-annotator helper modules share one utility image that can be
 overridden without editing the workflow:
 
-| Parameter                    | Default                                      | Purpose                                           |
-| ---------------------------- | -------------------------------------------- | ------------------------------------------------- |
-| `--panannotator_container`   | `ghcr.io/labgem/pangbank-annotator:dev`      | Python/shell helper modules and packaging steps.  |
-| `--database_setup_container` | `ghcr.io/labgem/pangbank-annotator:dev`      | Database validation and optional preparation.     |
-| `--amrfinder_container`      | `ncbi/amr:4.2.7-2026-05-15.1`                | AMRFinder+ execution.                             |
-| `--hmmer_container`          | `interpro/hmmer:3.3`                         | Native Pfam/NCBIFAM HMMER execution.              |
-| `--deepkoala_container`      | `ghcr.io/labgem/deepkoala:dev`               | DeepKOALA package and runtime dependencies.       |
+| Parameter                    | Default                                 | Purpose                                          |
+| ---------------------------- | --------------------------------------- | ------------------------------------------------ |
+| `--panannotator_container`   | `ghcr.io/labgem/pangbank-annotator:dev` | Python/shell helper modules and packaging steps. |
+| `--database_setup_container` | `ghcr.io/labgem/pangbank-annotator:dev` | Database validation and optional preparation.    |
+| `--amrfinder_container`      | `ncbi/amr:4.2.7-2026-05-15.1`           | AMRFinder+ execution.                            |
+| `--hmmer_container`          | `interpro/hmmer:3.3`                    | Native Pfam/NCBIFAM HMMER execution.             |
+| `--deepkoala_container`      | `ghcr.io/labgem/deepkoala:dev`          | DeepKOALA package and runtime dependencies.      |
 
 The utility image recipe is in `containers/panannotator/Dockerfile`; the
 DeepKOALA image recipe is in `containers/deepkoala/Dockerfile`.
