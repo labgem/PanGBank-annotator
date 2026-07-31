@@ -21,36 +21,34 @@ concurrency:
 
 env:
   NXF_ANSI_LOG: false
+  NFT_VER: "0.9.4"
+  NFT_WORKDIR: "/tmp/nf-test"
+  NXF_CONDA_CACHEDIR: "/tmp/nextflow-conda"
+  NXF_SINGULARITY_CACHEDIR: "/tmp/nextflow-singularity"
 
 jobs:
   nf-test:
-    name: Pipeline smoke checks
+    name: ${{ matrix.profile }} | ${{ matrix.NXF_VER }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        # Nextflow versions: check pipeline minimum and current latest
-        NXF_VER: ["25.10.4", ""]
+        NXF_VER: ["25.10.4", "latest-everything"]
+        profile: ["conda"]
 
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Install Nextflow
-        uses: nf-core/setup-nextflow@b4ec1bc7c16a94435159de94a05253542fddf6ef # v3
         with:
-          version: ${{ matrix.NXF_VER == '' && 'latest' || matrix.NXF_VER }}
+          submodules: recursive
 
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+      - name: Run nf-test
+        uses: ./.github/actions/nf-test
+        env:
+          NXF_VERSION: ${{ matrix.NXF_VER }}
         with:
-          python-version: "3.14"
-
-      - name: Validate Nextflow configuration
-        run: nextflow config -flat .
-
-      - name: Check helper scripts
-        run: |
-          bash -n bin/fetch_pangbank_collection.sh
-          bash -n bin/finalize_interproscan6_tsv.sh
-          python -m py_compile bin/package_clusters.py
-          python -m py_compile bin/package_annotations.py
+          profile: ${{ matrix.profile }}
+          shard: 1
+          total_shards: 1
+          paths: tests/default.nf.test
+          tags: pipeline

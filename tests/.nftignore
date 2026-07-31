@@ -8,5 +8,11 @@ multiqc/multiqc_data/multiqc_software_versions.txt
 multiqc/multiqc_data/llms-full.txt
 multiqc/multiqc_plots/{svg,pdf,png}/*.{svg,pdf,png}
 multiqc/multiqc_report.html
+report/multiqc_data/llms-full.txt
+report/multiqc_data/multiqc.log
+report/multiqc_data/multiqc.parquet
+report/multiqc_data/multiqc_data.json
+report/multiqc_data/multiqc_sources.txt
+report/multiqc_report.html
 fastqc/*_fastqc.{html,zip}
 pipeline_info/*.{html,json,txt,yml}
