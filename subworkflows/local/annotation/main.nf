@@ -21,6 +21,11 @@ workflow ANNOTATION {
     all_faa
     pangenome_families
     database_manifest
+    interproscan6_datadir
+    deepkoala_resources
+    eggnog_data_dir
+    eggnog_mapper_db
+    amrfinder_db
 
     main:
     def requested_tools = params.annotation_tools instanceof List
@@ -125,7 +130,10 @@ workflow ANNOTATION {
                 if (unsupported_native_apps) {
                     error "--interpro_mode native supports only Pfam and NCBIFAM. Use --interpro_mode imported for: ${unsupported_native_apps.join(', ')}"
                 }
-                INTERPRO_NATIVE(ch_panfam80_chunks.map { sample_id, faa, proteins -> tuple([id: sample_id], faa) })
+                INTERPRO_NATIVE(
+                    ch_panfam80_chunks.map { sample_id, faa, proteins -> tuple([id: sample_id], faa) },
+                    interproscan6_datadir
+                )
                 ch_interpro_tsv = INTERPRO_NATIVE.out.tsv
                 ch_versions = ch_versions.mix(INTERPRO_NATIVE.out.versions)
             } else if (params.interpro_mode == "imported") {
@@ -153,7 +161,7 @@ workflow ANNOTATION {
         }
 
         if (requested_tools.contains("deepkoala") && !all_protein_tools.contains("deepkoala")) {
-            DEEPKOALA(ch_panfam80_chunks)
+            DEEPKOALA(ch_panfam80_chunks, deepkoala_resources)
             PACKAGE_DEEPKOALA_ANNOTATIONS(
                 "deepkoala",
                 "panfam_80",
@@ -169,14 +177,14 @@ workflow ANNOTATION {
         if (requested_tools.contains("eggnog") && !all_protein_tools.contains("eggnog")) {
             EGGNOGMAPPER(
                 ch_panfam80_chunk_meta.map { meta, faa, proteins -> tuple(meta, faa) },
-                channel.value(tuple(params.eggnog_search_mode, file(params.eggnog_mapper_db))),
-                channel.value(file(params.eggnog_data_dir))
+                eggnog_mapper_db.map { db -> tuple(params.eggnog_search_mode, db) },
+                eggnog_data_dir
             )
             PARSE_EGGNOG(EGGNOGMAPPER.out.annotations)
             PACKAGE_EGGNOG_ANNOTATIONS(
                 "eggnog",
                 "panfam_80",
-                PARSE_EGGNOG.out.map { sample_id, tsv -> tsv }.collect(),
+                PARSE_EGGNOG.out.parsed.map { sample_id, tsv -> tsv }.collect(),
                 panfam_dir,
                 pangenome_families
             )
@@ -197,7 +205,7 @@ workflow ANNOTATION {
                 def chunk_files = chunks instanceof List ? chunks : [chunks]
                 chunk_files.collect { chunk -> tuple([id: chunk.baseName], chunk) }
             }
-            AMRFINDER(ch_amr_chunks)
+            AMRFINDER(ch_amr_chunks, amrfinder_db)
             PACKAGE_AMRFINDER_ANNOTATIONS(
                 "amrfinder",
                 "all_proteins",

@@ -2,11 +2,13 @@ process INTERPRO_NATIVE {
     tag "$meta.id"
     label "process_high"
     conda "${projectDir}/modules/local/envs/hmmer/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.hmmer_container : params.hmmer_container}"
 
     publishDir "${params.outdir}/annotation/raw/interpro/native", mode: "copy", enabled: params.keep_raw_annotations, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:
     tuple val(meta), path(fasta)
+    path interproscan6_datadir
 
     output:
     tuple val(meta), path("${meta.id}.interpro.tsv.gz"), emit: tsv
@@ -23,10 +25,10 @@ process INTERPRO_NATIVE {
         error "Native InterPro mode supports only Pfam and NCBIFAM. Unsupported app(s): ${invalid_apps.join(', ')}"
     }
     def pfam_cmd = run_pfam
-        ? "hmmsearch -Z 61295632 --cut_ga --cpu ${task.cpus} --domtblout pfam.domtblout ${params.interproscan6_datadir}/pfam/${params.interpro_pfam_version}/pfam_a.hmm ${fasta} > pfam.hmmsearch.out"
+        ? "hmmsearch -Z 61295632 --cut_ga --cpu ${task.cpus} --domtblout pfam.domtblout ${interproscan6_datadir}/pfam/${params.interpro_pfam_version}/pfam_a.hmm ${fasta} > pfam.hmmsearch.out"
         : "rm -f pfam.domtblout pfam.hmmsearch.out"
     def ncbifam_cmd = run_ncbifam
-        ? "hmmsearch -Z 61295632 --cut_tc --cpu ${task.cpus} --domtblout ncbifam.domtblout ${params.interproscan6_datadir}/ncbifam/${params.interpro_ncbifam_version}/ncbifam.hmm ${fasta} > ncbifam.hmmsearch.out"
+        ? "hmmsearch -Z 61295632 --cut_tc --cpu ${task.cpus} --domtblout ncbifam.domtblout ${interproscan6_datadir}/ncbifam/${params.interpro_ncbifam_version}/ncbifam.hmm ${fasta} > ncbifam.hmmsearch.out"
         : "rm -f ncbifam.domtblout ncbifam.hmmsearch.out"
     """
     set -euo pipefail
@@ -37,9 +39,9 @@ process INTERPRO_NATIVE {
     ${projectDir}/bin/parse_interpro_hmmer_domtblout.py \\
         --pfam-domtblout pfam.domtblout \\
         --ncbifam-domtblout ncbifam.domtblout \\
-        --pfam-dat "${params.interproscan6_datadir}/pfam/${params.interpro_pfam_version}/pfam_a.dat" \\
-        --ncbifam-hmm "${params.interproscan6_datadir}/ncbifam/${params.interpro_ncbifam_version}/ncbifam.hmm" \\
-        --entries-json "${params.interproscan6_datadir}/interpro/${params.interproscan6_interpro_version}/entries.json" \\
+        --pfam-dat "${interproscan6_datadir}/pfam/${params.interpro_pfam_version}/pfam_a.dat" \\
+        --ncbifam-hmm "${interproscan6_datadir}/ncbifam/${params.interpro_ncbifam_version}/ncbifam.hmm" \\
+        --entries-json "${interproscan6_datadir}/interpro/${params.interproscan6_interpro_version}/entries.json" \\
         --out "${meta.id}.interpro.tsv"
 
     for raw_file in pfam.domtblout pfam.hmmsearch.out ncbifam.domtblout ncbifam.hmmsearch.out "${meta.id}.interpro.tsv"; do

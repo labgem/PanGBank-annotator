@@ -2,6 +2,7 @@ process PREPARE_DIRECT_INPUT {
     tag "test_data"
     label "process_low"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
     publishDir "${params.outdir}/inputs", mode: "copy", saveAs: { filename ->
         if (filename.startsWith("versions_")) {
             return null

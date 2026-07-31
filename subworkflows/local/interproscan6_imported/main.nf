@@ -78,6 +78,7 @@ process NORMALIZE_INTERPROSCAN6_IMPORTED_OUTPUT {
     tag "$meta.id"
     label "process_low"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
     publishDir "${params.outdir}/annotation/raw/interpro/imported", mode: "copy", enabled: params.keep_raw_annotations, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:

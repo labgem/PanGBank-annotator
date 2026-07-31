@@ -65,9 +65,31 @@ workflow PANGBANK_ANNOTATOR {
     }
 
     if (run_annotation) {
-        VALIDATE_DATABASES()
+        ch_interproscan6_datadir = Channel.value(file(params.interproscan6_datadir, checkIfExists: true))
+        ch_deepkoala_resources = Channel.value(file(params.deepkoala_resources, checkIfExists: true))
+        ch_eggnog_data_dir = Channel.value(file(params.eggnog_data_dir, checkIfExists: true))
+        ch_eggnog_mapper_db = Channel.value(file(params.eggnog_mapper_db, checkIfExists: true))
+        ch_amrfinder_db = Channel.value(file(params.amrfinder_db, checkIfExists: true))
+
+        VALIDATE_DATABASES(
+            ch_interproscan6_datadir,
+            ch_deepkoala_resources,
+            ch_eggnog_data_dir,
+            ch_eggnog_mapper_db,
+            ch_amrfinder_db
+        )
         ch_database_manifest = VALIDATE_DATABASES.out.manifest
-        ANNOTATION(ch_annotation_panfam, ch_all_faa, ch_pangenome_families, ch_database_manifest)
+        ANNOTATION(
+            ch_annotation_panfam,
+            ch_all_faa,
+            ch_pangenome_families,
+            ch_database_manifest,
+            ch_interproscan6_datadir,
+            ch_deepkoala_resources,
+            ch_eggnog_data_dir,
+            ch_eggnog_mapper_db,
+            ch_amrfinder_db
+        )
         ch_versions = ch_versions.mix(ANNOTATION.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(ANNOTATION.out.multiqc)
     }

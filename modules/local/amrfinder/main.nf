@@ -2,11 +2,13 @@ process AMRFINDER {
     tag "$meta.id"
     label "process_high"
     conda "${projectDir}/modules/local/envs/amrfinder/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.amrfinder_container : params.amrfinder_container}"
 
     publishDir "${params.outdir}/annotation/raw/amrfinder", mode: "copy", enabled: params.keep_raw_annotations, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:
     tuple val(meta), path(fasta)
+    path amrfinder_db
 
     output:
     tuple val(meta), path("${meta.id}.amrfinder.tsv.gz"), emit: tsv
@@ -16,7 +18,7 @@ process AMRFINDER {
     """
     set -euo pipefail
 
-    AMRFINDER_DB="${params.amrfinder_db ?: ''}"
+    AMRFINDER_DB="${amrfinder_db}"
     if [[ -n "\$AMRFINDER_DB" && ! -f "\$AMRFINDER_DB/AMRProt.fa.phr" && -f "\$AMRFINDER_DB/latest/AMRProt.fa.phr" ]]; then
         AMRFINDER_DB="\$AMRFINDER_DB/latest"
     fi

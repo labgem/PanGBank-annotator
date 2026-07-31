@@ -2,6 +2,7 @@ process PACKAGE_PANFAM {
     tag "PANFAM"
     label "process_high"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
     publishDir "${params.outdir}", mode: "copy", saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:

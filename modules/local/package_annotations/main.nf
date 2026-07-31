@@ -2,6 +2,7 @@ process PACKAGE_ANNOTATIONS {
     tag "$tool"
     label "process_medium"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
     publishDir "${params.outdir}/annotation/parquet", mode: "copy", saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:

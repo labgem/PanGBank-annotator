@@ -2,6 +2,7 @@ process PREPARE_ANNOTATION_INPUT {
     tag "$annotation_input_mode"
     label "process_low"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
     publishDir enabled: false
 
     input:

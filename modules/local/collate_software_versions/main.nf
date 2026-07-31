@@ -2,6 +2,7 @@ process COLLATE_SOFTWARE_VERSIONS {
     tag "software_versions"
     label "process_low"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
     publishDir "${params.outdir}/pipeline_info", mode: "copy"
 
     input:

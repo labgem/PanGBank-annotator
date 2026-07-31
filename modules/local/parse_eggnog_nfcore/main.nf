@@ -2,13 +2,15 @@ process PARSE_EGGNOG {
     tag "$meta.id"
     label "process_single"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
-    publishDir "${params.outdir}/annotation/raw/eggnog", mode: "copy", enabled: params.keep_raw_annotations
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
+    publishDir "${params.outdir}/annotation/raw/eggnog", mode: "copy", enabled: params.keep_raw_annotations, saveAs: { filename -> filename.endsWith(".emapper.annotations.gz") ? filename : null }
 
     input:
     tuple val(meta), path(eggnog_raw)
 
     output:
-    tuple val(meta.id), path("${meta.id}.eggnog.tsv.gz")
+    tuple val(meta.id), path("${meta.id}.eggnog.tsv.gz"), emit: parsed
+    path("${meta.id}.emapper.annotations.gz"), emit: raw_annotations
 
     script:
     """
@@ -57,5 +59,11 @@ with opener(raw_path, "rt", newline="") as handle, open(out_path, "w", newline="
             writer.writerow([sample, fields[query_idx].strip(), ogs])
 PY
     gzip -f "${meta.id}.eggnog.tsv"
+
+    if [[ "${eggnog_raw}" == *.gz ]]; then
+        cp "${eggnog_raw}" "${meta.id}.emapper.annotations.gz"
+    else
+        gzip -c "${eggnog_raw}" > "${meta.id}.emapper.annotations.gz"
+    fi
     """
 }

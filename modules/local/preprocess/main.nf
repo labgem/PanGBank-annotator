@@ -2,6 +2,7 @@ process PREP_INPUT {
     tag { faa.baseName }
     label "process_low"
     conda "${projectDir}/modules/local/envs/panfam/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] ? 'docker://' + params.panannotator_container : params.panannotator_container}"
     publishDir "${params.outdir}/annotation/inputs/preprocessed", mode: "copy", enabled: false
 
     input:

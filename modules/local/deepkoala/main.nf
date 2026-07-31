@@ -7,6 +7,7 @@ process DEEPKOALA {
 
     input:
     tuple val(sample_id), path(faa), path(proteins)
+    path deepkoala_resources
 
     output:
     tuple val(sample_id), path("${sample_id}.deepkoala.tsv.gz"), emit: tsv
@@ -14,6 +15,7 @@ process DEEPKOALA {
     path "versions_deepkoala_${sample_id}.yml", emit: versions
 
     script:
+    def use_gpu = params.deepkoala_use_gpu && workflow.profile.contains('gpu')
     """
     set -euo pipefail
     printf 'sample_id\tprotein_id\tannotation_id\tscore\tevalue\tsource\traw_annotation\n' > "${sample_id}.deepkoala.tsv"
@@ -25,7 +27,7 @@ process DEEPKOALA {
       set +a
     fi
 
-    DEEPKOALA_RESOURCES="${params.deepkoala_resources ?: ''}"
+    DEEPKOALA_RESOURCES="${deepkoala_resources}"
     DEEPKOALA_WORKDIR="${params.deepkoala_workdir ?: ''}"
     DEEPKOALA_CLI_MODULE="${params.deepkoala_cli_module}"
     DEEPKOALA_MODEL="${params.deepkoala_model}"
@@ -67,7 +69,7 @@ process DEEPKOALA {
     export NUMEXPR_NUM_THREADS="${task.cpus}"
     export TORCH_NVML_DISABLE=1
     export PYTORCH_NVML_BASED_CUDA_CHECK=0
-    if [[ "${params.deepkoala_use_gpu}" != "true" ]]; then
+    if [[ "${use_gpu}" != "true" ]]; then
       export CUDA_VISIBLE_DEVICES=""
       export NVIDIA_VISIBLE_DEVICES="void"
     else
