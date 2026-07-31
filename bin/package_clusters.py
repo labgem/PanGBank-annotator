@@ -27,10 +27,17 @@ SIZE_BINS = (
 )
 LEVEL_LABELS = {"deep": "DeepClust 0", "50": "DeepClust 50", "80": "DeepClust 80"}
 LEVEL_COLORS = {"deep": "#5B7FB2", "50": "#5FA06E", "80": "#B95E63"}
+LEVEL_DISPLAY_ORDER = ("80", "50", "deep")
 
 
 def level_label(level: str) -> str:
     return LEVEL_LABELS.get(level, f"DeepClust {level}")
+
+
+def ordered_levels(levels) -> list[str]:
+    seen = [str(level) for level in levels]
+    order = {level: index for index, level in enumerate(LEVEL_DISPLAY_ORDER)}
+    return sorted(dict.fromkeys(seen), key=lambda level: (order.get(level, len(order)), level))
 
 
 def parse_args() -> argparse.Namespace:
@@ -347,7 +354,7 @@ def short_number(value: float) -> str:
 def plot_rank_distribution(before: dict[str, pd.DataFrame], after: dict[str, pd.DataFrame], out_path: Path) -> None:
     plt, _ticker = configure_matplotlib()
 
-    levels = list(after)
+    levels = ordered_levels(after)
     if not levels:
         return
 
@@ -410,7 +417,7 @@ def plot_rank_distribution_from_distribution(distribution: pd.DataFrame, out_pat
     plt, _ticker = configure_matplotlib()
 
     after = distribution[distribution["section"] == "after_ec"]
-    levels = list(after["cluster_level"].drop_duplicates())
+    levels = ordered_levels(after["cluster_level"].drop_duplicates())
     if not levels:
         return
 
@@ -479,7 +486,8 @@ def plot_hist_distribution(distribution: pd.DataFrame, out_path: Path) -> None:
         bins = [1, max_size + 1]
 
     fig, ax = plt.subplots(figsize=(7.2, 4.8))
-    for level, sub in after.groupby("cluster_level", sort=False):
+    for level in ordered_levels(after["cluster_level"].drop_duplicates()):
+        sub = after[after["cluster_level"] == level]
         if not sub.empty:
             hist, edges = np.histogram(
                 sub["cluster_size"].astype(int).to_numpy(),
@@ -510,7 +518,8 @@ def plot_ecdf(distribution: pd.DataFrame, out_path: Path, *, ccdf: bool = False)
     after = distribution[distribution["section"] == "after_ec"]
     fig, ax = plt.subplots(figsize=(7.0, 4.7))
     has_points = False
-    for level, sub in after.groupby("cluster_level", sort=False):
+    for level in ordered_levels(after["cluster_level"].drop_duplicates()):
+        sub = after[after["cluster_level"] == level]
         if sub.empty:
             continue
         sub = sub.sort_values("cluster_size")
@@ -553,7 +562,7 @@ def plot_ecdf(distribution: pd.DataFrame, out_path: Path, *, ccdf: bool = False)
 def plot_size_bins(bin_summary: pd.DataFrame, out_path: Path) -> None:
     plt, ticker = configure_matplotlib()
     after = bin_summary[bin_summary["section"] == "after_ec"]
-    levels = list(after["cluster_level"].drop_duplicates())
+    levels = ordered_levels(after["cluster_level"].drop_duplicates())
     bins = list(after["size_bin"].drop_duplicates())
     import numpy as np
 
@@ -611,7 +620,7 @@ def plot_cluster_reduction_summary(summary: pd.DataFrame, out_path: Path) -> Non
     plt, ticker = configure_matplotlib()
     import numpy as np
 
-    levels = list(summary["cluster_level"].drop_duplicates())
+    levels = ordered_levels(summary["cluster_level"].drop_duplicates())
     labels = [level_label(level) for level in levels]
     x = np.arange(len(levels))
     width = 0.34
@@ -691,7 +700,12 @@ def plot_cluster_reduction_summary(summary: pd.DataFrame, out_path: Path) -> Non
 def plot_representative_reduction(summary: pd.DataFrame, out_path: Path) -> None:
     plt, ticker = configure_matplotlib()
 
-    after = summary[summary["section"] == "after_ec"].copy()
+    after = (
+        summary[summary["section"] == "after_ec"]
+        .set_index("cluster_level")
+        .reindex(ordered_levels(summary["cluster_level"].drop_duplicates()))
+        .reset_index()
+    )
     labels = [level_label(level) for level in after["cluster_level"]]
     values = (1 - (after["clusters"] / after["members"])).tolist()
 
@@ -730,7 +744,12 @@ def plot_representative_reduction(summary: pd.DataFrame, out_path: Path) -> None
 
 def plot_singleton_rates(summary: pd.DataFrame, out_path: Path) -> None:
     plt, ticker = configure_matplotlib()
-    after = summary[summary["section"] == "after_ec"]
+    after = (
+        summary[summary["section"] == "after_ec"]
+        .set_index("cluster_level")
+        .reindex(ordered_levels(summary["cluster_level"].drop_duplicates()))
+        .reset_index()
+    )
     levels = after["cluster_level"].tolist()
     import numpy as np
 

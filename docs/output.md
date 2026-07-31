@@ -1,4 +1,4 @@
-# LABGeM/PanGBank-annotator: Output
+# PanGBank-annotator: Output
 
 PanGBank-annotator publishes final deliverables under the following directories:
 
@@ -101,8 +101,8 @@ sections. The `plots/` directories contain PNG files embedded in MultiQC.
 pipeline_info/
 ├── execution_report_*.html
 ├── execution_timeline_*.html
-├── execution_trace_*.txt
 ├── pipeline_dag_*.html
+├── execution_trace_*.txt
 ├── params_*.json
 ├── database_manifest.yml
 └── software_versions.yml
