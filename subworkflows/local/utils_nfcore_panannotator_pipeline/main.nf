@@ -1,5 +1,5 @@
 //
-// Subworkflow with functionality specific to the LABGeM/panannotator pipeline
+// Subworkflow with functionality specific to the LABGeM/PanGBank-annotator pipeline
 //
 
 /*

@@ -4,4 +4,4 @@ contact_links:
     about: Please join the nf-core community here
   - name: "Slack #panannotator channel"
     url: https://nfcore.slack.com/channels/panannotator
-    about: Discussion about the LABGeM/panannotator pipeline
+    about: Discussion about the LABGeM/PanGBank-annotator pipeline

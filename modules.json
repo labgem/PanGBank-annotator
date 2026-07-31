@@ -1,6 +1,6 @@
 {
-    "name": "LABGeM/panannotator",
-    "homePage": "https://github.com/LABGeM/panannotator",
+    "name": "LABGeM/PanGBank-annotator",
+    "homePage": "https://github.com/labgem/PanGBank-annotator",
     "repos": {
         "https://github.com/nf-core/modules.git": {
             "modules": {

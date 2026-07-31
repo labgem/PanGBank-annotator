@@ -1,10 +1,10 @@
 Run Name: $runName
 
 <% if (success){
-    out << "## LABGeM/panannotator execution completed successfully! ##"
+    out << "## LABGeM/PanGBank-annotator execution completed successfully! ##"
 } else {
     out << """####################################################
-## LABGeM/panannotator execution completed unsuccessfully! ##
+## LABGeM/PanGBank-annotator execution completed unsuccessfully! ##
 ####################################################
 The exit status of the task that caused the workflow execution to fail was: $exitStatus.
 The full error message was:
@@ -27,5 +27,5 @@ Pipeline Configuration:
 <% out << summary.collect{ k,v -> " - $k: $v" }.join("\n") %>
 
 --
-LABGeM/panannotator
-https://github.com/LABGeM/panannotator
+LABGeM/PanGBank-annotator
+https://github.com/labgem/PanGBank-annotator
