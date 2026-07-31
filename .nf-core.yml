@@ -5,38 +5,55 @@ nf_core_version: 4.0.2
 lint:
   files_unchanged:
     - CODE_OF_CONDUCT.md
+    - LICENSE
     - assets/nf-core-panannotator_logo_light.png
+    - assets/nf-core-PanGBank-annotator_logo_light.png
     - docs/images/nf-core-panannotator_logo_light.png
     - docs/images/nf-core-panannotator_logo_dark.png
+    - docs/images/nf-core-PanGBank-annotator_logo_light.png
+    - docs/images/nf-core-PanGBank-annotator_logo_dark.png
     - .github/ISSUE_TEMPLATE/bug_report.yml
+    - .github/ISSUE_TEMPLATE/config.yml
+    - .github/ISSUE_TEMPLATE/feature_request.yml
     - .github/PULL_REQUEST_TEMPLATE.md
+    - .github/workflows/branch.yml
     - .github/workflows/linting.yml
     - .github/workflows/linting_comment.yml
+    - .github/workflows/fix_linting.yml
+    - assets/email_template.html
     - assets/email_template.txt
+    - assets/sendmail_template.txt
     - docs/README.md
   nextflow_config:
     - manifest.name
     - manifest.homePage
+  pipeline_name_conventions: false
   multiqc_config:
     - report_comment
   container_configs: false
+  module_changes: false
   files_exist:
     - CODE_OF_CONDUCT.md
     - assets/nf-core-panannotator_logo_light.png
+    - assets/nf-core-PanGBank-annotator_logo_light.png
     - docs/images/nf-core-panannotator_logo_light.png
     - docs/images/nf-core-panannotator_logo_dark.png
+    - docs/images/nf-core-PanGBank-annotator_logo_light.png
+    - docs/images/nf-core-PanGBank-annotator_logo_dark.png
     - .github/ISSUE_TEMPLATE/config.yml
     - .github/workflows/awstest.yml
     - .github/workflows/awsfulltest.yml
     - conf/test_full.config
+    - docs/README.md
+  system_exit: false
 
 template:
   org: LABGeM
-  name: panAnnotator
+  name: pangbank_annotator
   description: PANFAM clustering and annotation workflow for PanGBank pangenome family
     representatives
   author: Yazid Hoblos
   version: 0.1.0
   force: true
-  outdir: active/panAnnotator
+  outdir: PanGBank-annotator
   is_nfcore: false
