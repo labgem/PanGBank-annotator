@@ -1,292 +1,192 @@
-# LABGeM/panAnnotator: Usage
+# PanGBank-annotator Usage
 
-Run from the repository root:
+## Runtime Profiles
+
+Use one executor profile and one software profile.
+
+| Profile                     | Purpose                                                                                             |
+| --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `slurm`                     | Submit processes to Slurm.                                                                          |
+| `conda`                     | Primary software profile for PanGBank-annotator modules.                                            |
+| `singularity` / `apptainer` | Container runtime. Required for imported InterProScan 6 unless using `local_tools` for development. |
+| `local_tools`               | Developer/debug mode. Uses tools already available in the active shell environment.                 |
+| `test`                      | Built-in small FASTA dataset for smoke tests; supports custom input FAA data.                       |
+
+Recommended production profiles:
+
+```bash
+# Clustering only or annotation without imported InterProScan
+-profile slurm,conda
+
+# Full annotation with imported InterProScan 6
+-profile slurm,conda,singularity
+```
+
+For Conda-backed runs, set writable cache directories on shared systems:
+
+```bash
+export NXF_CONDA_CACHEDIR=/path/to/nextflow-conda-envs
+export CONDA_PKGS_DIRS=/path/to/conda-pkgs
+```
+
+For Singularity or Apptainer, set a persistent image cache:
+
+```bash
+export NXF_SINGULARITY_CACHEDIR=/path/to/singularity-cache
+export NXF_APPTAINER_CACHEDIR=/path/to/apptainer-cache
+```
+
+Nextflow writes `.nextflow.log` in the launch directory by default. For
+reproducible runs, we recommend setting `NXF_LOG_FILE` before launching so the main Nextflow log
+is stored with the run outputs:
+
+```bash
+export NXF_LOG_FILE="$OUTDIR/pipeline_info/logs/nextflow.$(date +%Y%m%d_%H%M%S).$$.log"
+```
+
+## Quick Checks
+
+Check that the workflow parses:
+
+```bash
+nextflow config . -profile test,local_tools
+```
+
+Run a stub execution to check workflow wiring without executing the real tools:
 
 ```bash
 nextflow run . \
-  --release v1.0.0 \
+  -profile test,local_tools \
+  -stub-run \
+  --run_annotation true \
+  --interpro_mode native \
+  --outdir results/stub
+```
+
+Run the built-in small test dataset:
+
+```bash
+nextflow run . \
+  -profile test,conda,singularity \
+  --annotation_tools interpro,deepkoala,amrfinder \
+  --interpro_mode imported \
+  --outdir results/test
+```
+
+The `test` profile uses `tests/data/test_representatives.faa` and sets an
+internal test release ID.
+
+## Full Run
+
+Run clustering followed by annotation for a PanGBank collection release:
+
+```bash
+nextflow run PanGBank-annotator \
+  -profile slurm,conda,singularity \
   --collection GTDB_all \
-  --outdir outputs/panAnnotator/GTDB_all_v1.0.0 \
-  -profile slurm,conda
-```
-
-Use `--collection GTDB_refseq` to process the RefSeq-only collection.
-
-Run the built-in small test dataset with:
-
-```bash
-nextflow run . -profile test,local_tools --outdir results/test
-```
-
-`local_tools` disables Nextflow-managed Conda/container environments and uses
-tools from the environment already active in your shell. Use it only for
-developer tests where the active environment is known.
-
-For production or shared runs, use `conda` or `mamba` as the primary software
-profile. The local panAnnotator modules all declare Conda environments, so this
-is the supported standalone mode for full default runs. Add `singularity` or
-`apptainer` when you run imported InterProScan 6, whose app modules are
-containerized.
-
-Runtime profile summary:
-
-| Profile | Purpose |
-| --- | --- |
-| `slurm` | Submit processes to Slurm. Combine with a software profile. |
-| `conda` / `mamba` | Primary supported software profile. Use only Conda environments. |
-| `conda,singularity` | Conda for panAnnotator modules, Singularity for imported InterProScan app modules. |
-| `conda,apptainer` | Conda for panAnnotator modules, Apptainer for imported InterProScan app modules. |
-| `singularity` | Container profile. Use with `conda` for imported InterProScan 6 runs unless every requested module has a container. |
-| `apptainer` | Container profile. Use with `conda` for imported InterProScan 6 runs unless every requested module has a container. |
-| `local_tools` | Developer/debug mode; no software is managed by Nextflow. |
-
-Future development should add and test full-container support for all local
-panAnnotator modules. Until then, `conda,singularity` is the recommended
-profile combination for runs that include imported InterProScan 6.
-
-DeepKOALA uses an external resources directory configured by
-`--deepkoala_resources` and a source checkout configured by
-`--deepkoala_workdir`. On the LABGeM filesystem these default to the shared WP3
-DeepKOALA installation.
-
-When using a Conda-backed profile, the conda installation must be able to write
-to a package cache while creating environments. On clusters where the default
-conda package directories are read-only, set a writable cache before launching:
-
-```bash
-export NXF_CONDA_CACHEDIR=/path/to/writable/nextflow-conda-envs
-export CONDA_PKGS_DIRS=/path/to/writable/conda-pkgs
-```
-
-When using Singularity or Apptainer-backed profiles, set a persistent image
-cache so containers are not repeatedly pulled into the work directory:
-
-```bash
-export NXF_SINGULARITY_CACHEDIR=/path/to/writable/singularity-cache
-export NXF_APPTAINER_CACHEDIR=/path/to/writable/apptainer-cache
-```
-
-All DIAMOND clustering steps currently use DIAMOND 2.1.13. This pin is
-deliberate: DIAMOND 2.1.24 fails in `reassign` with `Error: Block::ids()`, and
-DIAMOND 2.2.4 reports that `reassign` has been temporarily removed. Do not
-upgrade DIAMOND for this workflow without retesting `deepclust`, `recluster`,
-and `reassign` together. The DIAMOND modules declare both a Conda environment
-and a BioContainers/Singularity image for this pinned version.
-
-By default, clustering runs `deepclust`, then the error-correction steps
-`recluster` and `reassign`. Set `--run_cluster_correction false` to skip
-`recluster` and `reassign`; in that mode, the initial `deepclust` clusters are
-packaged directly as the final PANFAM clusters.
-
-The workflow runs clustering by default. Add `--run_annotation` to run the
-annotation stage after clustering. The current annotation stage supports
-InterProScan 6, DeepKOALA, eggNOGMapper, and AMRFinder+.
-
-## Required Parameters
-
-`--release`
-
-: PanGBank collection release ID, for example `v1.0.0`. Required for normal
-PanGBank runs. The built-in `test` profile supplies its own small FASTA
-dataset instead.
-
-`--collection`
-
-: Full PanGBank collection name, for example `GTDB_all` or `GTDB_refseq`.
-
-`--outdir`
-
-: Directory where workflow outputs are published.
-
-## PanGBank Access
-
-The clustering stage uses the PanGBank API only to validate the selected
-collection release and resolve its numeric API release ID. That ID is written
-as `r<id>` and used in PANFAM cluster identifiers.
-
-Protein sequence data are read from the local PanGBank mirror:
-
-```text
-<pangbank_root>/collections/<collection>/release_<release>/data/pangenomes
-```
-
-Each pangenome directory must contain `all_protein_families.faa.gz`.
-
-## Intermediate Cluster Tables
-
-DIAMOND cluster tables are compressed and kept in the Nextflow `work/`
-directory. They are not copied to the output directory by default. Add
-`--keep_raw_clusters true` if you want to keep them under
-`<outdir>/clustering/raw/diamond/clusters/`.
-
-## Annotation Stage
-
-Enable annotation after clustering with:
-
-```bash
-nextflow run . \
-  --release v2.0.0 \
-  --collection GTDB_all \
-  --run_annotation \
-  --annotation_tools interpro,deepkoala,eggnog,amrfinder \
-  --outdir results/GTDB_all_v2.0.0 \
-  -profile slurm,conda,singularity
-```
-
-By default, annotation input is `clustering/fasta/PANFAM_80.faa.gz`. Tools listed in
-`--all_protein_tools` will instead run on all pangenome
-representative proteins; this is intended for tools such as AMRFinder+ where
-family representatives may lose relevant gene-level information.
-
-Raw annotation outputs are gzipped in Nextflow `work/` and are not published by
-default. Add `--keep_raw_annotations true` to publish them under
-`<outdir>/annotation/raw/<tool>/`.
-
-Run annotation only from an existing PANFAM clustering result with:
-
-```bash
-nextflow run . \
-  --run_clustering false \
+  --release 2.1.0 \
+  --run_clustering true \
   --run_annotation true \
   --annotation_tools interpro,deepkoala,eggnog,amrfinder \
-  --outdir results/GTDB_all_v2.1.0 \
-  -profile slurm,conda,singularity
+  --outdir results/GTDB_all_v2.1.0
 ```
 
-In annotation-only mode, `--outdir` must point to an existing panAnnotator
-result directory. The workflow reads clustering results from `<outdir>/clustering`
-and input metadata from `<outdir>/inputs`.
+By default:
 
-panAnnotator splits FASTA inputs for tools it runs directly. `--annotation_chunk_size`
-controls the number of proteins per chunk for native InterPro, DeepKOALA,
-eggNOG, and AMRFinder+. Imported InterProScan 6 uses its own internal
-`--interproscan6_batch_size` and `--interproscan6_sub_batch_size` settings.
+- `run_clustering` and `run_annotation` are both `true`
+- clustering levels are `deep,50,80`
+- DIAMOND `recluster` and `reassign` correction is enabled
+- `annotation_tools` are set to `interpro,deepkoala,eggnog,amrfinder`
+- InterPro annotations run with `--interpro_mode imported`, using the default `--interpro_apps Pfam,NCBIFAM`
+- annotation runs on `PANFAM_80`
+- AMRFinder+ runs on all pangenome proteins; `--all_protein_tools` defaults to `amrfinder`
+- raw clustering and annotation intermediates are not published
 
-InterPro annotations run in `imported` mode by default with
-`--interpro_apps Pfam,NCBIFAM`. This runs the vendored InterProScan 6 DSL2
-workflow inside the parent panAnnotator Nextflow graph. Imported mode can use
-InterProScan 6 applications beyond Pfam and NCBIFAM while keeping a single
-Nextflow controller, normal process visibility, and normal `-resume` behavior.
-Imported mode writes one annotation parquet per requested InterPro application,
-using a normalized lowercase application name such as `pfam.parquet`,
-`ncbifam.parquet`, or `superfamily.parquet`.
+## Clustering Only
 
-Use `--interpro_mode native` for the lightweight local HMMER implementation of
-Pfam and NCBIFAM. Native mode supports `--interpro_apps Pfam,NCBIFAM`,
-`--interpro_apps Pfam`, or `--interpro_apps NCBIFAM`.
-
-Imported mode is the exception to the Conda-only recommendation: it requires a
-container runtime because the vendored InterProScan app modules are
-containerized. For current HPC use, run it with `-profile slurm,conda,singularity`
-or `-profile slurm,conda,apptainer`. With `-profile local_tools`, imported
-InterProScan apps run against commands available in the active environment and
-are intended only for development.
-
-### InterProScan 6 Submodule And Temporary Patch
-
-panAnnotator tracks upstream InterProScan 6 as a Git submodule under
-`subworkflows/interproscan6`. Imported InterProScan is run from inside the
-parent panAnnotator workflow, so panAnnotator provides a small compatibility
-layer:
-
-- `lib` is a symlink to `subworkflows/interproscan6/lib`, allowing Groovy
-  classes imported by InterProScan modules to resolve from the parent
-  `projectDir`.
-- selected InterProScan helper scripts are exposed in `bin/` as symlinks,
-  because Nextflow adds the parent workflow `bin/` to task `PATH`.
-- imported InterProScan container tasks bind-mount
-  `subworkflows/interproscan6/bin`, so those symlink targets remain visible
-  inside Singularity/Apptainer containers.
-
-Until the upstream `sequences.db` staging/output issue is fixed in an
-InterProScan release, panAnnotator also carries a local patch:
-
-```text
-patches/interproscan6/0001-imported-workflow-localize-sequences-db.patch
-```
-
-Apply it after checking out or updating submodules:
+To run PANFAM clustering only:
 
 ```bash
-git submodule update --init --recursive
-bin/apply_interproscan6_patches.sh
+nextflow run PanGBank-annotator \
+  -profile slurm,conda \
+  --collection GTDB_all \
+  --release 2.1.0 \
+  --run_annotation false \
+  --outdir results/GTDB_all_v2.1.0_PANFAM
 ```
 
-The patch modifies only InterProScan `SPLIT_FASTA` and `WRITE_TSV` so SQLite
-reads use node-local temporary storage before outputs are moved back to the
-Nextflow work directory. The parent panAnnotator repository should commit the
-upstream submodule pointer and the patch file, but not a forked InterProScan
-commit for these temporary changes.
+See [Clustering](clustering.md) for detailed clustering behavior and clustering-specific parameters.
 
-DeepKOALA uses source code from `--deepkoala_workdir` and model files from
-`--deepkoala_resources`. By default these point to
-`/env/export/labgem_bank/WP3/deepkoala` and
-`/env/export/labgem_bank/WP3/deepkoala/resources`. The resources directory must
-contain model-date subdirectories such as `202502` or `202603`.
+## Annotation Only
 
-The container path is configured by `--deepkoala_container`, but it requires an
-accessible image. Build the default CPU image with:
-
-```bash
-docker build -t ghcr.io/labgem/deepkoala:0.1-beta modules/local/deepkoala
-```
-
-For local development, override `--deepkoala_workdir` to point to another
-DeepKOALA source checkout.
-
-eggNOGMapper uses the shared database paths configured with
-`--eggnog_data_dir` and `--eggnog_mapper_db`. Use Nextflow `-resume` when you
-want to reuse completed eggNOGMapper process results from the same work
-directory.
-
-AMRFinder+ uses the database configured by `--amrfinder_db`. On the LABGeM
-filesystem this defaults to `/env/export/labgem_bank/WP3/amrfinder`, which may
-be a database root containing a `latest` symlink.
-
-Before annotation starts, panAnnotator validates the database paths required by
-the requested tools and writes `<outdir>/pipeline_info/database_manifest.yml`.
-Use `--skip_db_validation true` only when a site-specific wrapper provides paths
-that are not visible during the validation process.
-
-The recommended shared database layout is:
+Annotation-only mode (`--run_clustering false`) reuses an existing PanGBank-annotator result directory, with the clustering results already present.
+The directory passed to `--outdir` must already contain:
 
 ```text
-<db_root>/
-  interproscan/interproscan6_data/
-  eggnog/5.0.2/
-  deepkoala/resources/
-  amrfinder/
+<outdir>/clustering/
+<outdir>/inputs/all_protein_families.faa.gz
+<outdir>/inputs/pangenome_families.tsv.gz
 ```
 
-When `--db_root <path>` is set, panAnnotator derives the annotation database
-paths from this layout:
+The report generated by an annotation-only run includes annotation sections and
+any existing clustering MultiQC custom content found under
+`<outdir>/report/clustering/custom_content/`.
 
-- `--interproscan6_datadir <db_root>/interproscan/interproscan6_data`
-- `--eggnog_data_dir <db_root>/eggnog/5.0.2`
-- `--eggnog_mapper_db <db_root>/eggnog/5.0.2/eggnog_proteins.dmnd`
-- `--deepkoala_resources <db_root>/deepkoala/resources`
-- `--amrfinder_db <db_root>/amrfinder`
+See [Annotation](annotation.md) for detailed annotation behavior and annotation-specific parameters.
 
-Use `--prepare_databases true --db_root <path>` to download or update the
-databases needed by the requested annotation tools before validation. This is an
-explicit opt-in step because the downloads can be large. The implemented setup
-actions follow the existing WP3 notes:
+## Custom FASTA Data
 
-- Pfam: `curl` Pfam-A HMM and metadata, then `hmmpress`.
-- InterProScan 6 imported applications: download InterProScan 6 data archives
-  from the EBI InterProScan 6 FTP layout and verify MD5 checksums.
-- eggNOG: run `download_eggnog_data.py -y --data_dir <eggnog_data_dir>`.
-- AMRFinder+: run `amrfinder_update --database <amrfinder_db>`.
-- DeepKOALA: download model files from GenomeNet into the `resources/`
-  directory when the requested model date is not already present.
+Normal production runs start from PanGBank using `--collection` and `--release`.
+For smoke tests or custom representative FASTA input, use the direct FASTA path
+parameters:
 
-Annotation outputs are:
+```bash
+nextflow run . \
+  -profile slurm,conda,singularity \
+  --test_data data/my_representatives.faa.gz \
+  --test_release_id custom \
+  --outdir results/custom_faa
+```
 
-- one parquet file per pangenome and annotation type:
-  `<annotation_type>_p<pangenome_id>.parquet`
-- one global parquet file per annotation type
+In this mode every FASTA record is treated as one pangenome family
+representative. The temporary pangenome ID is `1`, so this mode is intended for
+workflow testing and custom representative-level analyses, not for producing a
+PanGBank release package with real per-pangenome IDs.
 
-For InterPro applications, DeepKOALA/KOfam, and AMRFinder+, annotation parquet
-files keep only `Pangenome_id`, `Pangenome_family_id`, and `Annotation_id`.
-For eggNOG, annotation parquet files keep `Pangenome_id`,
-`Pangenome_family_id`, and the full `eggNOG_OGs` column.
+## Database Preparation
+
+Before annotation starts, PanGBank-annotator validates the database paths
+required by the requested tools and writes
+`<outdir>/pipeline_info/database_manifest.yml`.
+
+Use `--prepare_databases true --db_root /path/to/db_root` to download or update databases for the requested annotation tools before validation. 
+See [Annotation Databases](databases.md) for the expected database layout, tool-specific paths, and validation behavior.
+
+
+## Main Parameters Table
+
+| Parameter                  | Default                               | Values / example                                  | Purpose                                                                 |
+| -------------------------- | ------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------- |
+| `--collection`             | `GTDB_all`                            | `GTDB_all`, `GTDB_refseq`                         | PanGBank collection name.                                               |
+| `--release`                | unset                                 | `2.1.0`                                           | PanGBank collection release version. Required for PanGBank runs.        |
+| `--outdir`                 | required                              | `results/GTDB_all_v2.1.0`                         | Output directory.                                                       |
+| `--run_clustering`         | `true`                                | `true`, `false`                                   | Run the PANFAM clustering stage.                                        |
+| `--run_annotation`         | `true`                                | `true`, `false`                                   | Run the annotation stage.                                               |
+| `--levels`                 | `deep,50,80`                          | `80`, `50,80`, `deep,50,80`                       | Cluster levels to generate.                                             |
+| `--run_cluster_correction` | `true`                                | `true`, `false`                                   | Run DIAMOND `recluster` and `reassign`; if false, package `deepclust`.  |
+| `--keep_raw_clusters`      | `false`                               | `true`, `false`                                   | Publish gzipped raw DIAMOND cluster tables.                             |
+| `--annotation_tools`       | `interpro,deepkoala,eggnog,amrfinder` | Any comma-separated subset of those four tools.   | Annotation tools to run.                                                |
+| `--all_protein_tools`      | `amrfinder`                           | `none`, `amrfinder`, or selected requested tools. | Tools that should run on all proteins instead of `PANFAM_80`.           |
+| `--interpro_mode`          | `imported`                            | `imported`, `native`                              | Imported InterProScan 6 subworkflow or lightweight native Pfam/NCBIFAM. |
+| `--interpro_apps`          | `Pfam,NCBIFAM`                        | `Pfam,NCBIFAM,CATH-Gene3D,SUPERFAMILY,PANTHER`    | InterProScan applications to run.                                       |
+| `--annotation_chunk_size`  | `80000`                               | `1000000`                                         | Protein records per chunk for non-imported annotation tools.            |
+| `--keep_raw_annotations`   | `false`                               | `true`, `false`                                   | Publish gzipped raw annotation outputs.                                 |
+| `--pangbank_root`          | `/env/export/pangbank_data/prod`      | `/path/to/pangbank/prod`                          | Local PanGBank mirror root.                                             |
+| `--db_root`                | unset                                 | `/path/to/panannotator-dbs`                       | Root used to derive annotation database paths.                          |
+| `--prepare_databases`      | `false`                               | `true`, `false`                                   | Download/update requested annotation databases before validation.       |
+| `--skip_db_validation`     | `false`                               | `true`, `false`                                   | Skip annotation database validation. Use only for site-specific setups. |
+| `--test_data`              | unset, except in the `test` profile   | `data/my_representatives.faa.gz`                  | Direct FASTA input for smoke tests or custom representative analyses.   |
+| `--test_release_id`        | `rtest`                               | `custom`                                          | Release label used with `--test_data`.                                  |
+
+
+
