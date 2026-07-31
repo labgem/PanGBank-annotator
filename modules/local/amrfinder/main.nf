@@ -42,8 +42,8 @@ process AMRFINDER {
     stub:
     """
     cat > "${meta.id}.amrfinder.tsv" <<'EOF'
-Protein identifier	Contig id	Start	Stop	Strand	Gene symbol	Sequence name	Scope	Element type	Element subtype	Class	Subclass	Method	Target length	Reference sequence length	% Coverage of reference sequence	% Identity to reference sequence	Alignment length	Accession of closest sequence	Name of closest sequence	HMM id	HMM description
-tiny_mock_1	NA	1	10	+	blaSTUB	stub	plus	AMR	NA	BETA-LACTAM	NA	EXACT	10	10	100	100	10	NA	NA	NA	NA
+Protein identifier	Contig id	Start	Stop	Strand	Gene symbol	Element symbol	Sequence name	Scope	Element type	Element subtype	Class	Subclass	Method	Target length	Reference sequence length	% Coverage of reference sequence	% Identity to reference sequence	Alignment length	Accession of closest sequence	Name of closest sequence	HMM id	HMM description
+stub_family_1	NA	1	10	+	blaSTUB	blaSTUB	stub	plus	AMR	NA	BETA-LACTAM	NA	EXACT	10	10	100	100	10	NA	NA	NA	NA
 EOF
     gzip -f "${meta.id}.amrfinder.tsv"
 

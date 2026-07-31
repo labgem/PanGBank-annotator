@@ -509,6 +509,7 @@ def plot_ecdf(distribution: pd.DataFrame, out_path: Path, *, ccdf: bool = False)
     plt, _ticker = configure_matplotlib()
     after = distribution[distribution["section"] == "after_ec"]
     fig, ax = plt.subplots(figsize=(7.0, 4.7))
+    has_points = False
     for level, sub in after.groupby("cluster_level", sort=False):
         if sub.empty:
             continue
@@ -521,6 +522,9 @@ def plot_ecdf(distribution: pd.DataFrame, out_path: Path, *, ccdf: bool = False)
             y = [1 - value for value in y]
             values = [value for value, y_value in zip(values, y) if y_value > 0]
             y = [y_value for y_value in y if y_value > 0]
+        if not values:
+            continue
+        has_points = True
         ax.step(
             values,
             y,
@@ -531,7 +535,8 @@ def plot_ecdf(distribution: pd.DataFrame, out_path: Path, *, ccdf: bool = False)
         )
     ax.set_xscale("log")
     if ccdf:
-        ax.set_yscale("log")
+        if has_points:
+            ax.set_yscale("log")
         ax.set_ylabel("Fraction of clusters with size >= x")
         ax.set_title("PANFAM cluster size tail distribution")
     else:

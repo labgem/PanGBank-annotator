@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/LABGeM/panannotator/main/nextflow_schema.json",
-    "title": "LABGeM/panannotator pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/labgem/PanGBank-annotator/main/nextflow_schema.json",
+    "title": "LABGeM/PanGBank-annotator pipeline parameters",
     "description": "PANFAM clustering and annotation workflow for PanGBank pangenome family representatives",
     "type": "object",
     "$defs": {
@@ -266,8 +266,8 @@
                 },
                 "run_annotation": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Run the annotation stage after clustering."
+                    "default": true,
+                    "description": "Run the annotation stage after clustering. Set to false for clustering-only runs."
                 },
                 "levels": {
                     "type": "string",

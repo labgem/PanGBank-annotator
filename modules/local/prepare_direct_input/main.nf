@@ -52,4 +52,36 @@ process PREPARE_DIRECT_INPUT {
         awk: \$(awk --version 2>/dev/null | head -n 1 || echo unknown)
     END_VERSIONS
     """
+
+    stub:
+    """
+    rm -f ${all_faa}
+    printf '>stub_family_1\\nMKTAYIAKQRQISFVKSHFSRQ\\n' > ${all_faa}
+    printf '>stub_family_2\\nMKTAYIAKQRQISFVKSHFSRQ\\n' >> ${all_faa}
+    printf '>stub_family_3\\nGAVLILALLAVAGALAAPAA\\n' >> ${all_faa}
+    printf '>stub_family_4\\nGAVLILALLAVAGALAAPAA\\n' >> ${all_faa}
+
+    printf 'Pangenome_id\\tPangenome_family_id\\n' > pangenome_families.tsv
+    printf '1\\tstub_family_1\\n' >> pangenome_families.tsv
+    printf '1\\tstub_family_2\\n' >> pangenome_families.tsv
+    printf '1\\tstub_family_3\\n' >> pangenome_families.tsv
+    printf '1\\tstub_family_4\\n' >> pangenome_families.tsv
+    gzip -n -f pangenome_families.tsv
+
+    cat > collection_metadata.yml <<-END_METADATA
+    input_mode: test_data_stub
+    release_id: "${params.test_release_id}"
+    input_fasta: "${params.test_data}"
+    pangenome_count: 1
+    family_count: "4"
+    END_METADATA
+
+    printf 'Local_pangenome_name\\tPangenome_id\\n' > pangenome_api_ids.tsv
+    printf 'test_data\\t1\\n' >> pangenome_api_ids.tsv
+
+    cat <<-END_VERSIONS > versions_prepare_direct_input.yml
+    "${task.process}":
+        awk: "stub"
+    END_VERSIONS
+    """
 }

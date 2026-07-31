@@ -39,6 +39,7 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 run_annotation = true
+                interpro_mode = 'native'
             }
         }
 
