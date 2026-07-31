@@ -13,33 +13,9 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { PANANNOTATOR  } from './workflows/panannotator'
+include { PANGBANK_ANNOTATOR  } from './workflows/panannotator'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/utils_nfcore_panannotator_pipeline'
 include { PIPELINE_COMPLETION     } from './subworkflows/local/utils_nfcore_panannotator_pipeline'
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    NAMED WORKFLOWS FOR PIPELINE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-//
-// WORKFLOW: Run main analysis pipeline depending on type of input
-//
-workflow LABGEM_PANANNOTATOR {
-
-    main:
-
-    //
-    // WORKFLOW: Run pipeline
-    //
-    PANANNOTATOR()
-
-    emit:
-    multiqc_report = PANANNOTATOR.out.multiqc_report // channel: /path/to/multiqc_report.html
-    panfam = PANANNOTATOR.out.panfam
-    software_versions = PANANNOTATOR.out.software_versions
-}
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -66,7 +42,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    LABGEM_PANANNOTATOR()
+    PANGBANK_ANNOTATOR()
     //
     // SUBWORKFLOW: Run completion tasks
     //
@@ -76,7 +52,7 @@ workflow {
         params.plaintext_email,
         params.outdir,
         params.monochrome_logs,
-        LABGEM_PANANNOTATOR.out.multiqc_report
+        PANGBANK_ANNOTATOR.out.multiqc_report
     )
 }
 

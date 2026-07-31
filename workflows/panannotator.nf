@@ -16,7 +16,7 @@ include { VALIDATE_DATABASES } from '../modules/local/validate_databases/main'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow PANANNOTATOR {
+workflow PANGBANK_ANNOTATOR {
 
     main:
 

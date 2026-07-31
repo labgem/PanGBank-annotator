@@ -100,7 +100,7 @@ process NORMALIZE_INTERPROSCAN6_IMPORTED_OUTPUT {
     fi
 
     {
-        printf '"%s":\n' "LABGEM_PANANNOTATOR:PANANNOTATOR:ANNOTATION:INTERPROSCAN6_IMPORTED"
+        printf '"%s":\n' "${task.process}"
         printf '    interproscan6: "%s"\n' "${params.interproscan6_version}"
         printf '    interpro: "%s"\n' "${params.interproscan6_interpro_version}"
     } > versions_interproscan6_imported.yml
