@@ -25,7 +25,7 @@ PANFAM_80 representatives.
 | `--interproscan6_sub_batch_size` | `5000`                                                          | `5000`                                            | Imported InterProScan 6 sub-batch size.                                                 |
 | `--keep_raw_annotations`         | `false`                                                         | `true`, `false`                                   | Publish gzipped raw annotation outputs.                                                 |
 | `--interproscan6_datadir`        | `/env/export/labgem_bank/WP3/interproscan/interproscan6_data`   | `/path/to/interproscan6_data`                     | InterProScan 6 database directory.                                                      |
-| `--deepkoala_workdir`            | `/env/export/labgem_bank/WP3/deepkoala`                         | `/path/to/deepkoala`                              | DeepKOALA source checkout.                                                              |
+| `--deepkoala_workdir`            | unset                                                           | `/path/to/deepkoala`                              | Optional DeepKOALA source checkout override for development.                             |
 | `--deepkoala_resources`          | `/env/export/labgem_bank/WP3/deepkoala/resources`               | `/path/to/deepkoala/resources`                    | DeepKOALA model resources.                                                              |
 | `--eggnog_data_dir`              | `/env/export/labgem_bank/WP3/eggnog/5.0.2/`                     | `/path/to/eggnog/5.0.2`                           | eggNOGMapper data directory.                                                            |
 | `--eggnog_mapper_db`             | `/env/export/labgem_bank/WP3/eggnog/5.0.2/eggnog_proteins.dmnd` | `/path/to/eggnog_proteins.dmnd`                   | eggNOGMapper DIAMOND database.                                                          |
@@ -91,11 +91,12 @@ bin/apply_interproscan6_patches.sh
 
 ## DeepKOALA
 
-DeepKOALA uses source code from `--deepkoala_workdir` and model files from
-`--deepkoala_resources`. On the LABGeM filesystem these default to:
+DeepKOALA uses the installed/container `deepkoala` Python package by default and
+model files from `--deepkoala_resources`. Use `--deepkoala_workdir` only to
+override the source code during development. On the LABGeM filesystem, model
+resources default to:
 
 ```text
-/env/export/labgem_bank/WP3/deepkoala
 /env/export/labgem_bank/WP3/deepkoala/resources
 ```
 

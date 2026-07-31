@@ -7,20 +7,28 @@ Use one executor profile and one software profile.
 | Profile                     | Purpose                                                                                             |
 | --------------------------- | --------------------------------------------------------------------------------------------------- |
 | `slurm`                     | Submit processes to Slurm.                                                                          |
-| `conda`                     | Primary software profile for PanGBank-annotator modules.                                            |
-| `singularity` / `apptainer` | Container runtime. Required for imported InterProScan 6 unless using `local_tools` for development. |
+| `conda`                     | Conda software profile for development and tools with conda support.                                |
+| `singularity` / `apptainer` | Recommended production software profile. Required for imported InterProScan 6 unless using `local_tools` for development. |
 | `local_tools`               | Developer/debug mode. Uses tools already available in the active shell environment.                 |
 | `test`                      | Built-in small FASTA dataset for smoke tests; supports custom input FAA data.                       |
 
 Recommended production profiles:
 
 ```bash
-# Clustering only or annotation without imported InterProScan
--profile slurm,conda
+# Recommended generic production run
+-profile slurm,singularity
 
-# Full annotation with imported InterProScan 6
--profile slurm,conda,singularity
+# Equivalent Apptainer run
+-profile slurm,apptainer
+
+# Conda fallback for clustering or native InterPro mode
+-profile slurm,conda
 ```
+
+The production target is container-only execution. In `singularity` or
+`apptainer` mode, every PanGBank-annotator process has a container directive, so
+Nextflow should not create Conda environments. Conda remains available for
+development, smoke tests, and native InterPro/Pfam-NCBIFAM runs.
 
 For Conda-backed runs, set writable cache directories on shared systems:
 
@@ -34,6 +42,21 @@ For Singularity or Apptainer, set a persistent image cache:
 ```bash
 export NXF_SINGULARITY_CACHEDIR=/path/to/singularity-cache
 export NXF_APPTAINER_CACHEDIR=/path/to/apptainer-cache
+```
+
+First-time conversion of large images to Singularity/Apptainer SIF can take a
+while on shared filesystems. The default pull timeout is `2 h` and can be
+overridden with `--container_pull_timeout`.
+
+For Singularity/Apptainer runs, annotation database paths are passed as explicit
+Nextflow `path` inputs to the processes that need them. This lets Nextflow stage
+and mount those paths instead of relying on site-specific global bind options.
+
+Use `--container_mounts` only as an escape hatch for extra paths that are not
+declared as workflow inputs:
+
+```bash
+--container_mounts /extra/path1,/extra/path2
 ```
 
 Nextflow writes `.nextflow.log` in the launch directory by default. For
@@ -82,7 +105,7 @@ Run clustering followed by annotation for a PanGBank collection release:
 
 ```bash
 nextflow run PanGBank-annotator \
-  -profile slurm,conda,singularity \
+  -profile slurm,singularity \
   --collection GTDB_all \
   --release 2.1.0 \
   --run_clustering true \
@@ -108,7 +131,7 @@ To run PANFAM clustering only:
 
 ```bash
 nextflow run PanGBank-annotator \
-  -profile slurm,conda \
+  -profile slurm,singularity \
   --collection GTDB_all \
   --release 2.1.0 \
   --run_annotation false \
@@ -142,7 +165,7 @@ parameters:
 
 ```bash
 nextflow run . \
-  -profile slurm,conda,singularity \
+  -profile slurm,singularity \
   --test_data data/my_representatives.faa.gz \
   --test_release_id custom \
   --outdir results/custom_faa
@@ -185,8 +208,28 @@ See [Annotation Databases](databases.md) for the expected database layout, tool-
 | `--db_root`                | unset                                 | `/path/to/panannotator-dbs`                       | Root used to derive annotation database paths.                          |
 | `--prepare_databases`      | `false`                               | `true`, `false`                                   | Download/update requested annotation databases before validation.       |
 | `--skip_db_validation`     | `false`                               | `true`, `false`                                   | Skip annotation database validation. Use only for site-specific setups. |
+| `--container_mounts`       | unset                                 | `/extra/path1,/extra/path2`                       | Extra host paths mounted into Singularity/Apptainer containers.         |
+| `--container_pull_timeout` | `2 h`                                 | `4 h`                                             | Timeout for Singularity/Apptainer image pull and SIF conversion.        |
 | `--test_data`              | unset, except in the `test` profile   | `data/my_representatives.faa.gz`                  | Direct FASTA input for smoke tests or custom representative analyses.   |
 | `--test_release_id`        | `rtest`                               | `custom`                                          | Release label used with `--test_data`.                                  |
 
+## Container Images
 
+`singularity` and `apptainer` runs use containers for every pipeline process.
+The local PanGBank-annotator helper modules share one utility image that can be
+overridden without editing the workflow:
 
+| Parameter                    | Default                                      | Purpose                                           |
+| ---------------------------- | -------------------------------------------- | ------------------------------------------------- |
+| `--panannotator_container`   | `ghcr.io/labgem/pangbank-annotator:dev`      | Python/shell helper modules and packaging steps.  |
+| `--database_setup_container` | `ghcr.io/labgem/pangbank-annotator:dev`      | Database validation and optional preparation.     |
+| `--amrfinder_container`      | `ncbi/amr:4.2.7-2026-05-15.1`                | AMRFinder+ execution.                             |
+| `--hmmer_container`          | `interpro/hmmer:3.3`                         | Native Pfam/NCBIFAM HMMER execution.              |
+| `--deepkoala_container`      | `ghcr.io/labgem/deepkoala:dev`               | DeepKOALA package and runtime dependencies.       |
+
+The utility image recipe is in `containers/panannotator/Dockerfile`; the
+DeepKOALA image recipe is in `containers/deepkoala/Dockerfile`.
+GitHub Actions can build both images with
+`.github/workflows/build-panannotator-container.yml` and publishes it to GHCR on
+pushes to `main`, tags, releases, or manual dispatch. Pull requests build the
+image without pushing it.

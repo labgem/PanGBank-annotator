@@ -6,7 +6,6 @@ process EGGNOGMAPPER {
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/eggnog-mapper:2.1.13--pyhdfd78af_2':
         'quay.io/biocontainers/eggnog-mapper:2.1.13--pyhdfd78af_2' }"
-    publishDir "${params.outdir}/annotation/raw/eggnog", mode: "copy", enabled: params.keep_raw_annotations, saveAs: { filename -> filename.startsWith("versions_") ? null : filename }
 
     input:
     tuple val(meta), path(fasta)
@@ -14,9 +13,9 @@ process EGGNOGMAPPER {
     path(eggnog_data_dir)
 
     output:
-    tuple val(meta), path("*.emapper.annotations.gz")   , emit: annotations
-    tuple val(meta), path("*.emapper.seed_orthologs.gz"), emit: orthologs, optional: true
-    tuple val(meta), path("*.emapper.hits.gz")          , emit: hits     , optional: true
+    tuple val(meta), path("*.emapper.annotations")   , emit: annotations
+    tuple val(meta), path("*.emapper.seed_orthologs"), emit: orthologs, optional: true
+    tuple val(meta), path("*.emapper.hits")          , emit: hits     , optional: true
     tuple val("${task.process}"), val('eggnog-mapper'), eval("emapper.py --version 2>&1 | grep -o 'emapper-[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+' | sed 's/emapper-//'"), topic: versions, emit: versions_eggnogmapper
 
     when:
@@ -45,10 +44,6 @@ process EGGNOGMAPPER {
         $db_arg \\
         ${dbmem} \\
         --output ${prefix}
-
-    gzip -f ${prefix}.emapper.annotations
-    if [[ -f ${prefix}.emapper.seed_orthologs ]]; then gzip -f ${prefix}.emapper.seed_orthologs; fi
-    if [[ -f ${prefix}.emapper.hits ]]; then gzip -f ${prefix}.emapper.hits; fi
     """
 
     stub:
@@ -59,6 +54,5 @@ process EGGNOGMAPPER {
     touch ${prefix}.emapper.annotations
     touch ${prefix}.emapper.seed_orthologs
     touch ${prefix}.emapper.hits
-    gzip -f ${prefix}.emapper.annotations ${prefix}.emapper.seed_orthologs ${prefix}.emapper.hits
     """
 }

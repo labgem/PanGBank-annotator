@@ -3,6 +3,5 @@
 channels:
   - conda-forge
   - bioconda
-  - nodefaults
 dependencies:
   - bioconda::eggnog-mapper=2.1.13
