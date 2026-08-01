@@ -87,9 +87,6 @@ workflow ANNOTATION {
         }
 
         if (requested_tools.contains("interpro") && !all_protein_tools.contains("interpro")) {
-            def normalize_interpro_app = { value ->
-                value.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")
-            }
             def interpro_app_aliases = [
                 antifam: "antifam",
                 cathgene3d: "cathgene3d",
@@ -119,7 +116,7 @@ workflow ANNOTATION {
                 tmbed: "tmbed",
             ]
             def interpro_apps = params.interpro_apps.toString().split(',').collect { raw_app ->
-                def app_name = interpro_app_aliases[normalize_interpro_app(raw_app)]
+                def app_name = interpro_app_aliases[raw_app.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")]
                 if (!app_name) {
                     error "Unsupported InterProScan 6 application '${raw_app}'. Allowed values: ${interpro_app_aliases.values().unique().sort().join(', ')}"
                 }

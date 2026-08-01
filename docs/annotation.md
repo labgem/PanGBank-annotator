@@ -25,12 +25,11 @@ PANFAM_80 representatives.
 | `--interproscan6_sub_batch_size` | `5000`                                                          | `5000`                                            | Imported InterProScan 6 sub-batch size.                                                 |
 | `--keep_raw_annotations`         | `false`                                                         | `true`, `false`                                   | Publish gzipped raw annotation outputs.                                                 |
 | `--interproscan6_datadir`        | `/env/export/labgem_bank/WP3/interproscan/interproscan6_data`   | `/path/to/interproscan6_data`                     | InterProScan 6 database directory.                                                      |
-| `--deepkoala_workdir`            | unset                                                           | `/path/to/deepkoala`                              | Optional DeepKOALA source checkout override for development.                             |
+| `--deepkoala_workdir`            | unset                                                           | `/path/to/deepkoala`                              | Optional DeepKOALA source checkout override for development.                            |
 | `--deepkoala_resources`          | `/env/export/labgem_bank/WP3/deepkoala/resources`               | `/path/to/deepkoala/resources`                    | DeepKOALA model resources.                                                              |
 | `--eggnog_data_dir`              | `/env/export/labgem_bank/WP3/eggnog/5.0.2/`                     | `/path/to/eggnog/5.0.2`                           | eggNOGMapper data directory.                                                            |
 | `--eggnog_mapper_db`             | `/env/export/labgem_bank/WP3/eggnog/5.0.2/eggnog_proteins.dmnd` | `/path/to/eggnog_proteins.dmnd`                   | eggNOGMapper DIAMOND database.                                                          |
 | `--amrfinder_db`                 | `/env/export/labgem_bank/WP3/amrfinder`                         | `/path/to/amrfinder`                              | AMRFinder+ database root or versioned database directory.                               |
-
 
 ## InterProScan 6
 
@@ -57,7 +56,7 @@ annotation/parquet/superfamily.parquet
 ```
 
 Imported mode requires a container runtime profile such as `singularity`,
-`apptainer`, or `docker`, unless using `local_tools` for development. 
+`apptainer`, or `docker`, unless using `local_tools` for development.
 
 PanGBank-annotator tracks upstream InterProScan 6 as a Git submodule under `subworkflows/interproscan6`.
 Initialize it after checkout:
@@ -115,21 +114,21 @@ Pangenome_family_id
 Annotation_id
 ```
 
-For eggNOG, `Annotation_id` is taken as the  `eggNOG_OGs` column.
+For eggNOG, `Annotation_id` is taken as the `eggNOG_OGs` column.
 For AMRFinder+, `Annotation_id` is taken as the `Element Symbol` column.
 
 When multiple annotations are assigned to the same protein, rows are sorted by
 their position on the protein sequence when the raw tool output provides
-coordinates, in order to preserve domain order. 
+coordinates, in order to preserve domain order.
 
-## Notes 
+## Notes
 
 - Tools listed in `--all_protein_tools` but not listed in `--annotation_tools` are
-ignored. Use `--all_protein_tools none` to force all requested tools to run on
-`PANFAM_80`.
+  ignored. Use `--all_protein_tools none` to force all requested tools to run on
+  `PANFAM_80`.
 
 - Raw annotation outputs are gzipped in the Nextflow `work/` directory and are not
-published by default. When `--keep_raw_annotations true`, published raw outputs
-are written under: `annotation/raw/<tool>/`.
+  published by default. When `--keep_raw_annotations true`, published raw outputs
+  are written under: `annotation/raw/<tool>/`.
 
 - The `test` profile defaults to `--interpro_mode native`.

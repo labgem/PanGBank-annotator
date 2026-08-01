@@ -11,19 +11,16 @@ workflow INTERPROSCAN6_IMPORTED {
     def apps_config = raw_apps_config.collectEntries { app_name, app_config ->
         [(app_name.toString().toLowerCase()): app_config]
     }
-    def normalize_interpro_app = { value ->
-        value.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")
-    }
     def app_aliases = [:]
     apps_config.each { app_name, app_config ->
-        app_aliases[normalize_interpro_app(app_name)] = app_name
-        app_aliases[normalize_interpro_app(app_config.name)] = app_name
+        app_aliases[app_name.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")] = app_name
+        app_aliases[app_config.name.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")] = app_name
         (app_config.aliases ?: []).each { alias ->
-            app_aliases[normalize_interpro_app(alias)] = app_name
+            app_aliases[alias.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")] = app_name
         }
     }
     def apps = params.interpro_apps.toString().split(',').collect { raw_app ->
-        def normalized = normalize_interpro_app(raw_app)
+        def normalized = raw_app.toString().trim().toLowerCase().replaceAll(/[-_ ]/, "")
         def app_name = app_aliases[normalized]
         if (!app_name) {
             error "Unsupported InterProScan 6 application '${raw_app}'. Allowed values: ${apps_config.keySet().sort().join(', ')}"
@@ -62,7 +59,7 @@ workflow INTERPROSCAN6_IMPORTED {
     )
 
     INTERPROSCAN.out
-        .flatMap { files -> files instanceof List ? files : [files] }
+        .flatten()
         .filter { it.name.endsWith(".tsv") || it.name.endsWith(".tsv.gz") }
         .map { tsv -> tuple([id: "panfam80"], file(tsv.toString())) }
         .set { ch_imported_tsv }

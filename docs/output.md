@@ -49,7 +49,6 @@ clustering/
 Raw DIAMOND cluster tables are gzipped in the Nextflow `work/` directory by default. Use
 `--keep_raw_clusters true` to also publish them under `clustering/raw/diamond/`.
 
-
 ## Annotation
 
 ```text
