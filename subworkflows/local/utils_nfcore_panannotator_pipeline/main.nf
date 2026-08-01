@@ -8,8 +8,6 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { UTILS_NFSCHEMA_PLUGIN     } from '../../nf-core/utils_nfschema_plugin'
-include { paramsSummaryMap          } from 'plugin/nf-schema'
 include { completionEmail           } from '../../nf-core/utils_nfcore_pipeline'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NFCORE_PIPELINE     } from '../../nf-core/utils_nfcore_pipeline'
@@ -47,29 +45,10 @@ workflow PIPELINE_INITIALISATION {
         workflow.profile.tokenize(',').intersect(['conda', 'mamba']).size() >= 1
     )
 
-    //
-    // Validate parameters and generate parameter summary to stdout
-    //
-
-    def before_text = ""
-    def after_text = ""
-    if (monochrome_logs) {
-        before_text = before_text.replaceAll(/\033\[[0-9;]*m/, '')
+    if (help || help_full) {
+        log.info "Usage: nextflow run ${workflow.manifest.name} -profile <conda/singularity/...> --release <RELEASE> --collection <GTDB_all/GTDB_refseq> --outdir <OUTDIR>"
+        System.exit(0)
     }
-
-    command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --release <RELEASE> --collection <GTDB_all/GTDB_refseq> --outdir <OUTDIR>"
-
-    UTILS_NFSCHEMA_PLUGIN (
-        workflow,
-        validate_params,
-        null,
-        help,
-        help_full,
-        show_hidden,
-        before_text,
-        after_text,
-        command
-    )
 
     //
     // Check config provided to the pipeline
@@ -112,7 +91,7 @@ workflow PIPELINE_COMPLETION {
     multiqc_report  //  string: Path to MultiQC report
 
     main:
-    summary_params = paramsSummaryMap(workflow, parameters_schema: "nextflow_schema.json")
+    summary_params = [:]
     def multiqc_reports = multiqc_report.toList()
 
     //
