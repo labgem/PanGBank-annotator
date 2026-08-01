@@ -23,7 +23,6 @@ lint:
     - assets/email_template.html
     - assets/email_template.txt
     - assets/sendmail_template.txt
-    - docs/README.md
   nextflow_config:
     - manifest.name
     - manifest.homePage
@@ -41,10 +40,6 @@ lint:
     - docs/images/nf-core-PanGBank-annotator_logo_light.png
     - docs/images/nf-core-PanGBank-annotator_logo_dark.png
     - .github/ISSUE_TEMPLATE/config.yml
-    - .github/workflows/awstest.yml
-    - .github/workflows/awsfulltest.yml
-    - conf/test_full.config
-    - docs/README.md
   system_exit: false
 
 template:
