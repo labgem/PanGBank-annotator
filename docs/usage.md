@@ -26,8 +26,7 @@ Recommended production profiles:
 ```
 
 The production target is container-only execution. In `singularity` or
-`apptainer` mode, every PanGBank-annotator process has a container directive, so
-Nextflow should not create Conda environments. Conda remains available for
+`apptainer` mode, every PanGBank-annotator process now has a container directive. Conda remains available for
 development, smoke tests, and native InterPro/Pfam-NCBIFAM runs.
 
 For Conda-backed runs, set writable cache directories on shared systems:
@@ -90,7 +89,7 @@ Run the built-in small test dataset:
 
 ```bash
 nextflow run . \
-  -profile test,conda,singularity \
+  -profile test,singularity \
   --annotation_tools interpro,deepkoala,amrfinder \
   --interpro_mode imported \
   --outdir results/test
